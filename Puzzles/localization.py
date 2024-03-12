@@ -147,9 +147,7 @@ def game_loop(mistakes):
                 cv2.destroyAllWindows()
                 return False
             
-            print('hi')
             cv2.imshow('image', image)
-            print('bye')
 
         # Game over condition
         if mistakes[0] >= 3:
