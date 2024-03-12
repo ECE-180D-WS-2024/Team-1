@@ -1,0 +1,4 @@
+bleak==0.21.1
+numpy==1.26.4
+opencv_python==4.8.1.78
+SpeechRecognition==3.10.1

@@ -1,7 +1,10 @@
 import random
 
-clue = 'b'  # The initial clue for the player
-mistake = 0  # Initialize mistake counter
+wires = []
+L = -1
+
+COLORS = ['r', 'y', 'b', 'g', 'w', 'o']  # Example colors: red, yellow, blue, green, white, orange
+
 
 def decide_wire_to_cut(wires, L):
     # Count the number of each color of wire
@@ -18,39 +21,46 @@ def decide_wire_to_cut(wires, L):
         return 6  # Cut the last wire
     else:
         return 4  # Otherwise, cut the fourth wire
+    
 
-# Generate a random sequence of 6 wires, add a black wire, and a random number L
-colors = ['r', 'y', 'b', 'g', 'w', 'o']  # Example colors: red, yellow, blue, green, white, orange
-wires = random.choices(colors, k=5)  # Choose 5 wires randomly
-wires.append('k')  # Add a black wire
-random.shuffle(wires)  # Shuffle the wires to mix the black wire randomly
-L = random.randint(1, 9)  # Random number L between 1 and 9
+def init():
+    global wires
+    global L
+    
+    # Generate a random sequence of 6 wires, add a black wire, and a random number L
+    wires = random.choices(COLORS, k=5)  # Choose 5 wires randomly
+    wires.append('k')  # Add a black wire
+    random.shuffle(wires)  # Shuffle the wires to mix the black wire randomly
+    L = random.randint(1, 9)  # Random number L between 1 and 9
+    
+def game_loop(mistakes):
 
-# Main game loop
-while(True):
-    # Print the wire sequence and color legend
-    print(f"There are 6 wires: {''.join(wires)}")
-    print(f"The bomb shows a number: {L}")
+    # Main game loop
+    while(True):
+        # Print the wire sequence and color legend
+        print(f"There are 6 wires: {''.join(wires)}")
+        print(f"The bomb shows a number: {L}")
 
-    # Prompt the user for input
-    print("Your input to defuse this stage?: ")
-    user_choice = int(input())
+        # Prompt the user for input
+        print("Your input to defuse this stage? ('s' to switch puzzles): ")
+        user_choice = input()
 
-    # Determine the correct wire to cut
-    correct_wire = decide_wire_to_cut(wires, L)
+        if user_choice == 's':
+            return False
 
-    # Compare user input with correct wire
-    if user_choice == correct_wire:
-        print('Congrats: that was correct.')
-        print('Here is your next clue: ', clue)
-        print('Switching to next game.')
-        break
-    else:
-        mistake += 1
-        print('Wrong, Mistakes: ', mistake)
-        # Check if the player has made too many mistakes
-        if mistake >= 3:
-            print('BOOOOOOOM, BOMB HAS EXPLODED, YOU LOSE.')
-            break
+        # Determine the correct wire to cut
+        correct_wire = decide_wire_to_cut(wires, L)
+
+        # Compare user input with correct wire
+        if int(user_choice) == correct_wire:
+            return True
         else:
-            print('Please Retry')
+            mistakes[0] += 1
+            print('Wrong, Mistakes: ', mistakes[0])
+            # Check if the player has made too many mistakes
+            if mistakes[0] >= 3:
+                return False
+
+
+def start_wires(mistakes):
+    return game_loop(mistakes)
