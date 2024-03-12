@@ -51,7 +51,6 @@ def generate_key(stages):
 
 # Generate game stages and solution key
 stages = generate_stages()
-print(stages)
 answer_key = generate_key(stages)
 
 # Game loop for each stage
@@ -127,7 +126,7 @@ for i_stage in range(STAGE_COUNT):
                     user_answer = [] # Reset user answer for the current stage
                 else:
                     if len(user_answer) != i_stage + 1:
-                        print("Next position please!", mistake)
+                        print("Next position please!")
                     else:
                         user_answer = []  # Correct sequence for this stage, reset for the next stage
                         break # Move to the next stage
