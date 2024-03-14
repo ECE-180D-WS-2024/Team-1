@@ -61,10 +61,9 @@ def game_loop(mistakes):
         new_added = False
         centered = False
         while True:
-
+            
             _, image = cap.read()
             image = cv2.flip(image, 1) # Flip the image for natural interaction
-            cv2.imshow('image', image)
 
             # convert from BGR to HSV color space
             hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -143,8 +142,9 @@ def game_loop(mistakes):
                     break
 
             if cv2.waitKey(1) & 0xFF == ord('s'):
-                cap.release()
                 cv2.destroyAllWindows()
+                cap.release()
+                # cv2.destroyAllWindows()
                 return False
             
             cv2.imshow('image', image)

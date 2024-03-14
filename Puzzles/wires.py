@@ -3,7 +3,7 @@ import random
 wires = []
 L = -1
 
-COLORS = ['r', 'y', 'b', 'g', 'w', 'o']  # Example colors: red, yellow, blue, green, white, orange
+COLORS = ['r', 'y', 'b', 'g', 'w', 'o', 'k']  # Example colors: red, yellow, blue, green, white, orange, black
 
 
 def decide_wire_to_cut(wires, L):
@@ -29,7 +29,6 @@ def init():
     
     # Generate a random sequence of 6 wires, add a black wire, and a random number L
     wires = random.choices(COLORS, k=5)  # Choose 5 wires randomly
-    wires.append('k')  # Add a black wire
     random.shuffle(wires)  # Shuffle the wires to mix the black wire randomly
     L = random.randint(1, 9)  # Random number L between 1 and 9
     
