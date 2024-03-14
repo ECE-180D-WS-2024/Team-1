@@ -22,8 +22,9 @@ async def asyncMain():
             if Imu_Readings["success"]:
                 print("Writing to file...")
                 await writeIMUtoFile(Imu_Readings)
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: # This doesn't work
         print("here")
+    finally:
         if BleClient.is_connected:
             await BleClient.disconnect()
 
