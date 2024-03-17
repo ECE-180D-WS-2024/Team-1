@@ -63,9 +63,9 @@ def game_loop(mistakes):
 
             # Initialize the recognizer
             r = sr.Recognizer()
-
             # Use the default microphone as the audio source
-            with sr.Microphone() as source:                
+            with sr.Microphone() as source:       
+                r.adjust_for_ambient_noise(source)         
                 audio = r.listen(source)                   # listen for the first phrase and extract it into audio data
 
             try:
@@ -73,7 +73,8 @@ def game_loop(mistakes):
                 # print("You said " + r.recognize_google(audio))    
                 
                 # Check if the recognized speech matches the key
-                if str(r.recognize_google(audio)).lower().replace(" ", "") == key.lower():
+                spoken = r.recognize_google(audio)
+                if str(spoken).lower().replace(" ", "") == key.lower():
                     return True
                 else:
                     mistakes[0] += 1
@@ -82,8 +83,9 @@ def game_loop(mistakes):
                     if mistakes[0] >= 3:
                         return False
             
-            except:                            
+            except Exception as e:                            
                 # Speech is unintelligible
+                print(e)
                 print("Could not understand audio, please retry.")
 
 

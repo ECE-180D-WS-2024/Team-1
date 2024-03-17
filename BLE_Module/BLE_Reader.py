@@ -1,7 +1,9 @@
+import numpy as np
+
 def readIMU():
     linear_accelerations = []
     angular_velocities = []
-    with open("IMU.txt", "r") as f:
+    with open("BLE_Module/IMU.txt", "r") as f:
         f.readline() # Pass through header
         for line in f:
             l, a = line.split("---")
@@ -9,4 +11,6 @@ def readIMU():
             angular_velocities.append([ float(num) for num in a.split(",")])
     return {"linear_accelerations": linear_accelerations, "angular_velocities": angular_velocities}
 
-print(readIMU())
+# Expects uniform 2d Array and averages along columns
+def averageValues(vals):
+    return np.mean(vals, 0)
