@@ -1,5 +1,6 @@
 import speech_recognition as sr
 import random
+import time
 
 code = ''
 key = ''
@@ -45,7 +46,7 @@ def init():
     key = analyze_code()
 
 def game_loop(mistakes):
-
+    first_speech = True
     # Main game loop
     while True:
         print("The bomb shows the following characters:", code)
@@ -59,6 +60,8 @@ def game_loop(mistakes):
         if int(x)!=0:
             break
         else:
+            if first_speech:
+                time.sleep(0.5)
             print("Begin Speaking:")
 
             # Initialize the recognizer
