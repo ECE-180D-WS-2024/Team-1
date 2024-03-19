@@ -5,6 +5,7 @@ import random
 from Puzzles import localization, sequence, speech, wires
 from Utilities.Orientation import Orientation
 from Utilities.ble_imu_decode import ble_imu_decode
+from Utilities.color_calibration import calibrate
 # Mistake threshold
 THRESHOLD = 3
 
@@ -20,7 +21,7 @@ PUZZLES = {
 def main():
 
     wires.init()
-    localization.init()
+    localization.init(calibrate())
     sequence.init()
     speech.init()
 

@@ -2,8 +2,11 @@ import numpy as np
 import cv2
 import random
 
-
 # Constants for the game
+MARGIN_H = 6
+MARGIN_S = 12
+MARGIN_V = 12
+
 STAGE_COUNT = 4
 COLORS = ['r','g','y','b']
 COLOR_REPEAT_TABLE = {
@@ -15,6 +18,8 @@ COLOR_REPEAT_TABLE = {
 
 stages = []
 answer_key = []
+lower_limit = np.array([])
+upper_limit = np.array([])
 
 def generate_stages():
     """Generate a sequence of colors (stages) for the game."""
@@ -32,22 +37,27 @@ def generate_key():
         answer_key_local.append(COLOR_REPEAT_TABLE[pattern[0]][len(pattern)])
     return answer_key_local
 
-def init():
+def init(color):
     global stages
     global answer_key
+    global lower_limit
+    global upper_limit
 
     # Generate game stages and solution key
     stages = generate_stages()
     answer_key = generate_key()
+    lower_limit = np.array([color[0] - MARGIN_H, color[1] - MARGIN_S, color[2] - MARGIN_V])
+    upper_limit = np.array([color[0] + MARGIN_H, color[1] + MARGIN_S, color[2] + MARGIN_V])
 
 
 def game_loop(mistakes):
     # Initialize game variables
     user_answer=[]
     # Set up video capture
-    cap = cv2.VideoCapture(1)  # Start video capture
-    WIDTH = int(cap.get(3))  # Get video width
-    HEIGHT = int(cap.get(4))  # Get video height
+    cap = cv2.VideoCapture(0)  # Start video capture
+    BORDER_THICKNESS = 50
+    WIDTH = int(cap.get(3)) + 2*BORDER_THICKNESS  # Get video width
+    HEIGHT = int(cap.get(4)) + 2*BORDER_THICKNESS  # Get video height
     # Define screen boundary constants for bomb movement
     L_X_BOUND = int(WIDTH/4)
     R_X_BOUND = int(3*WIDTH/4)
@@ -64,13 +74,14 @@ def game_loop(mistakes):
             
             _, image = cap.read()
             image = cv2.flip(image, 1) # Flip the image for natural interaction
-
+            image = cv2.copyMakeBorder(image, BORDER_THICKNESS, BORDER_THICKNESS, BORDER_THICKNESS, BORDER_THICKNESS, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+    
             # convert from BGR to HSV color space
             hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-            # Define the color range for detection
-            lower_limit = np.array([90, 200, 200])
-            upper_limit = np.array([110, 255, 255])
+            # # Define the color range for detection
+            # lower_limit = np.array([90, 200, 200])
+            # upper_limit = np.array([125, 255, 255])
 
             # Create a mask to detect objects within the color range
             mask = cv2.inRange(hsv_image, lower_limit, upper_limit)
@@ -89,7 +100,7 @@ def game_loop(mistakes):
             if contours:
                 largest_contour = max(contours, key=cv2.contourArea)
                 x, y, w, h = cv2.boundingRect(largest_contour) # Get bounding box of largest contour
-                cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 0), 2) # Draw bounding box
+                cv2.rectangle(image, (x + int(w/2) - 2, y + int(h/2) - 2), (x + int(w/2) + 2, y + int(h/2) + 2), (255, 0, 0), 4) # Draw bounding box
 
                 color_middle_x = x + w/2
                 color_middle_y = y + h/2
