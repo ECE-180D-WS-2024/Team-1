@@ -70,8 +70,10 @@ def calibration_loop():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     
-    cap.release()
+    
     cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    cap.release()
     return [average_hsv[0][0], average_hsv[0][1], average_hsv[0][2]]
 
 def calibrate():

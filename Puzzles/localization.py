@@ -154,26 +154,29 @@ def game_loop(mistakes):
 
             if cv2.waitKey(1) & 0xFF == ord('s'):
                 cv2.destroyAllWindows()
+                cv2.waitKey(1)
                 cap.release()
-                # cv2.destroyAllWindows()
                 return False
             
             cv2.imshow('image', image)
 
         # Game over condition
         if mistakes[0] >= 3:
-            cap.release()
             cv2.destroyAllWindows()
+            cv2.waitKey(1)
+            cap.release()
             return False
 
     # Final message if the game is completed successfully
     if mistakes[0] < 3:
-        cap.release()
         cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        cap.release()
         return True
 
-    cap.release()
     cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    cap.release()
 
 
 def start_localization(mistakes):
