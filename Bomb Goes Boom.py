@@ -27,6 +27,9 @@ def main():
 
     print()
     print()
+    print()
+    print()
+    print()
     print("Welcome to the Bomb Defusal Game!")
     
     completed_games = set()
