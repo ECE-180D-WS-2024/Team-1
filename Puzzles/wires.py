@@ -28,7 +28,7 @@ def init():
     global L
     
     # Generate a random sequence of 6 wires, add a black wire, and a random number L
-    wires = random.choices(COLORS, k=5)  # Choose 5 wires randomly
+    wires = random.choices(COLORS, k=6)  # Choose 6 wires randomly
     random.shuffle(wires)  # Shuffle the wires to mix the black wire randomly
     L = random.randint(1, 9)  # Random number L between 1 and 9
     

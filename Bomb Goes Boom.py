@@ -5,6 +5,8 @@ import random
 from Puzzles import localization, sequence, speech, wires
 from Utilities.Orientation import Orientation
 from Utilities.ble_imu_decode import ble_imu_decode
+from Utilities.color_calibration import calibrate
+import os
 # Mistake threshold
 THRESHOLD = 3
 
@@ -20,14 +22,24 @@ PUZZLES = {
 def main():
 
     wires.init()
-    localization.init()
+    localization.init(calibrate())
     sequence.init()
     speech.init()
 
-    print()
-    print()
-    print("Welcome to the Bomb Defusal Game!")
-    
+    os.system('clear')
+    while True:
+        print("Welcome to the Bomb Defusal Game!")
+        print("Please enter 's' to start or 'q' to quit :(")
+        start = input()
+        if start == 's':
+            break
+        elif start == 'q':
+            return
+        else:
+            print('Unrecognized, please try again.')
+            print()
+            print()
+            
     completed_games = set()
     mistakes = [0]  # Use a list to simulate pass by reference
     last_game = None
