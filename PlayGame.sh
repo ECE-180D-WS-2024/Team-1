@@ -12,6 +12,6 @@ cd BLE_Module
 python BLE_Writer.py > BLE_Log.txt 2>&1 &
 PID=$!
 cd ..
-python "Bomb Goes Boom.py"
+python "Bomb_Goes_Boom.py"
 kill $PID
 exit
