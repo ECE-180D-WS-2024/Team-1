@@ -88,7 +88,7 @@ void loop() {
       }
       
       // Send IMU Data through BLE, 
-      if (IMU.accelerationAvailable() && IMU.gyroscopeAvailable() && timer > 100) {
+      if (IMU.accelerationAvailable() && IMU.gyroscopeAvailable()) {
         digitalWrite(ledPin, HIGH); // Indicator that data is sending
         IMU.readAcceleration(x, y, z);
         IMU.readGyroscope(rx, ry, rz);
