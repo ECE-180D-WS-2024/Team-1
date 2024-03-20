@@ -54,7 +54,7 @@ def game_loop(mistakes):
     # Initialize game variables
     user_answer=[]
     # Set up video capture
-    cap = cv2.VideoCapture(0)  # Start video capture
+    cap = cv2.VideoCapture(1)  # Start video capture
     BORDER_THICKNESS = 50
     WIDTH = int(cap.get(3)) + 2*BORDER_THICKNESS  # Get video width
     HEIGHT = int(cap.get(4)) + 2*BORDER_THICKNESS  # Get video height

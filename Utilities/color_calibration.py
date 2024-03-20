@@ -27,7 +27,7 @@ def get_dominant_color(frame, center, width, height):
     return dominant_color_hsv
 
 def calibration_loop():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     frame_count = 0
     
     while True:
