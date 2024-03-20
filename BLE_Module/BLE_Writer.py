@@ -28,7 +28,62 @@ async def asyncMain():
         if BleClient.is_connected:
             await BleClient.disconnect()
 
+# Test Length of Timing
+async def asyncMainTestTiming():
+    BleDev = await asyncFindDevice("Nano 33 IoT")
+    print("Found BleDev: " + BleDev.address)
+    BleClient = BleakClient(BleDev)
+    await BleClient.connect()
+    read_ten = []
+    read_hundred = []
+    read_thousand = []
+    try:
+        for _ in range(5):
+            t1 = time.time()
+            Imu_Readings = await asyncReadIMU(BleClient, numReadings=10)
+            if Imu_Readings["success"]:
+                print("Writing to file...")
+                await writeIMUtoFile(Imu_Readings)
+            t2 = time.time()
+            Imu_Readings = await asyncReadIMU(BleClient, numReadings=20)
+            if Imu_Readings["success"]:
+                print("Writing to file...")
+                await writeIMUtoFile(Imu_Readings)
+            t3 = time.time()
+            Imu_Readings = await asyncReadIMU(BleClient, numReadings=30)
+            if Imu_Readings["success"]:
+                print("Writing to file...")
+                await writeIMUtoFile(Imu_Readings)
+            t4 = time.time()
+            read_ten.append(t2-t1)
+            read_hundred.append(t3-t2)
+            read_thousand.append(t4-t3)
+    except KeyboardInterrupt: # This doesn't work
+        print("here")
+    finally:
+        file_out = convert_to_csv([read_ten, read_hundred, read_thousand])
+        with open("IMU_test.txt", "w") as f:
+            f.write("time for 10 readings (ms)")
+            idx = 1
+            for line in file_out:
+                if idx == 2:
+                    f.write("time for 20 readings (ms)")
+                if idx == 3:
+                    f.write("time for 30 readings (ms)")
+                f.write(line)
+                f.write("\r\n")
+                idx += 1
+        if BleClient.is_connected:
+            await BleClient.disconnect()
 
+def convert_to_csv(data):
+    out = []
+    for row in data:
+        string = str(row[0])
+        for idx in range(1, len(row)):
+            string += ", " + str(row[idx])
+        out.append(string)
+    return out
 
 async def asyncFindDevice(name):
     # Get BLE Device
@@ -78,6 +133,7 @@ async def asyncReadIMU(client, numReadings=10):
         print(e)
         return dict({"success": False})
 
+## Unused function which can be used to toggle LED on board
 async def toggleLED(BleDev, numToggles):
     # Connect to BLE
     try:
