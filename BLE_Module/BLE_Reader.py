@@ -13,4 +13,6 @@ def readIMU():
 
 # Expects uniform 2d Array and averages along columns
 def averageValues(vals):
-    return np.mean(vals, 0)
+    return np.mean(vals[len(vals) - 10 : len(vals) ], 0)
+
+

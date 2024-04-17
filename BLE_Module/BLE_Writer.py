@@ -28,6 +28,50 @@ async def asyncMain():
         if BleClient.is_connected:
             await BleClient.disconnect()
 
+async def asyncMainRolling():
+    BleDev = await asyncFindDevice("Nano 33 IoT")
+    print("Found BleDev: " + BleDev.address)
+    BleClient = BleakClient(BleDev)
+    await BleClient.connect()
+    created = False
+    try:
+        while True:
+            if not created:
+                Imu_readings = await asyncReadIMU(BleClient, numReadings=10)
+            else:
+                Imu_readings = await asyncReadIMU(BleClient, numReadings=1)
+            if Imu_Readings["success"]:
+                print("Writing to file...")
+                await writeIMUtoFile(Imu_readings, created)
+                created = True
+    except KeyboardInterrupt:
+        print("here")
+    finally:
+        if BleClient.is_connected:
+            await BleClient.disconnect()
+
+async def asyncMainQueue(q):
+    BleDev = await asyncFindDevice("Nano 33 IoT")
+    print("Found BleDev: " + BleDev.address)
+    BleClient = BleakClient(BleDev)
+    await BleClient.connect()
+    created = False
+    try:
+        while True:
+            if not created:
+                Imu_readings = await asyncReadIMU(BleClient, numReadings=10)
+                created = True
+            else:
+                Imu_readings = await asyncReadIMU(BleClient, numReadings=1)
+            if Imu_Readings["success"]:
+                print("Writing to Queue...")
+                await writeIMUtoQueue(Imu_readings, q)
+    except KeyboardInterrupt:
+        print("here")
+    finally:
+        if BleClient.is_connected:
+            await BleClient.disconnect()
+    
 # Test Length of Timing
 async def asyncMainTestTiming():
     BleDev = await asyncFindDevice("Nano 33 IoT")
@@ -170,6 +214,11 @@ async def writeIMUtoFile(IMUData):
             f.write(str(data[0][i][0]) + ", " + str(data[0][i][1]) + ", " + str(data[0][i][2]) + " --- " + 
                     str(data[1][i][0]) + ", " + str(data[1][i][1]) + ", " + str(data[1][i][2]))
             f.write("\r\n")
+
+# Write data to file
+async def writeIMUtoQueue(IMUData, queue):
+    data = [IMUData['linear_accels'], IMUData['angular_velos']]
+    queue.put(data)
 
 if __name__ == "__main__":
     # Run as async
