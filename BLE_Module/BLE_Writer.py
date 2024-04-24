@@ -50,22 +50,20 @@ async def asyncMainRolling():
         if BleClient.is_connected:
             await BleClient.disconnect()
 
-async def asyncMainQueue(q):
+# Main function for multiprocessing - avoid file abstraction
+async def asyncMainMultiprocessing(sharedArr):
     BleDev = await asyncFindDevice("Nano 33 IoT")
     print("Found BleDev: " + BleDev.address)
     BleClient = BleakClient(BleDev)
     await BleClient.connect()
-    created = False
+    replIdx = 0
     try:
-        while True:
-            if not created:
-                Imu_readings = await asyncReadIMU(BleClient, numReadings=10)
-                created = True
-            else:
-                Imu_readings = await asyncReadIMU(BleClient, numReadings=1)
-            if Imu_Readings["success"]:
-                print("Writing to Queue...")
-                await writeIMUtoQueue(Imu_readings, q)
+        Imu_readings = await asyncReadIMU(BleClient, numReadings=1)
+        if Imu_readings["success"]:
+            print("Writing to Shared Mem...")
+            await writeIMUtoSharedMem(Imu_readings, sharedArr, replIdx)
+            replIdx = (replIdx + 1) % len(sharedArr) # Replace least recent measure
+            print(sharedArr)
     except KeyboardInterrupt:
         print("here")
     finally:
@@ -216,52 +214,14 @@ async def writeIMUtoFile(IMUData):
             f.write("\r\n")
 
 # Write data to file
-async def writeIMUtoQueue(IMUData, queue):
-    data = [IMUData['linear_accels'], IMUData['angular_velos']]
-    queue.put(data)
+async def writeIMUtoSharedMem(IMUData, SharedArr, replIdx):
+    data = [IMUData['linear_accels'][0], IMUData['angular_velos'][0]]
+    SharedArr[replIdx] = data
+
+# Runner Method for multiprocessing to call
+def asyncMultiprocessingRunner(sharedArr):
+    asyncio.run(asyncMainMultiprocessing(sharedArr))
 
 if __name__ == "__main__":
     # Run as async
     asyncio.run(asyncMain())       
-
-
-
-
-
-
-# General Sync Usage Pattern... Doesn't work
-def syncMain():
-    findDeviceResult = syncFindDevice("Nano 33 IoT")
-    if not findDeviceResult["success"]:
-        exit(1)
-    print("Found BleDev: " + findDeviceResult["BleDev"].address)
-    Imu_Readings = syncReadIMU(findDeviceResult["BleDev"])
-    print(Imu_Readings) 
-    
-# Run an Async Function as Synchronous Function
-# func is a lambda with captured arguments
-# I.E to run asyncFindDevice Synchronously:
-# Define func = lambda: asyncFindDevice("Nano 33 IoT")
-def syncRunAsync(func):
-    success = True
-    result = None
-    loop = asyncio.new_event_loop()
-    try: 
-        result = loop.run_until_complete(func())
-    except Exception as e:
-        print("Error in " + str(func))
-        print(e)
-        success = False
-    finally:
-        loop.close()
-    return dict({"success": success, "BleDev": result})
-
-# Get BLE Device Synchronously
-def syncFindDevice(name):
-    func = lambda: asyncFindDevice(name)
-    return syncRunAsync(func)
-
-# ReadIMU Synchronously
-def syncReadIMU(BleDev):
-    func = lambda: asyncReadIMU(BleDev)
-    return syncRunAsync(func)

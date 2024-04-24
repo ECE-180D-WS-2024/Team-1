@@ -6,10 +6,14 @@ from Puzzles import localization, sequence, speech, wires
 from Utilities.Orientation import Orientation
 from Utilities.ble_imu_decode import ble_imu_decode
 from Utilities.color_calibration import calibrate
+from multiprocessing import Process, Array
+from BLE_Module.BLE_Writer import asyncMultiprocessingRunner
+import numpy as np
 import os
 # Mistake threshold
 THRESHOLD = 3
-
+# Number of IMU readings averaged
+IMU_WINDOW = 10
 # Initialize the game state
 PUZZLES = {
     'wires': wires.start_wires,
@@ -20,6 +24,12 @@ PUZZLES = {
 
 
 def main():
+
+    # Initialize shared memory
+    sharedArr = Array('f', [0] * IMU_WINDOW)
+    print(sharedArr)
+    p = Process(target=asyncMultiprocessingRunner, args=[sharedArr])
+    p.start()
 
     wires.init()
     localization.init(calibrate())
@@ -71,7 +81,7 @@ def main():
             print("Hold bomb in desired position for 3 seconds and press enter to switch the puzzle")
             input() # Wait for input to check orientation
 
-            orientation = ble_imu_decode() # Decode orientation
+            orientation = ble_imu_decode(sharedArr) # Decode orientation
             if orientation == Orientation.FLAT and 'wires' in remaining_games:
                 game_key = 'wires'
             elif orientation == Orientation.UPSIDE_DOWN and  'localization' in remaining_games:

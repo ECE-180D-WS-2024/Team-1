@@ -13,6 +13,13 @@ def readIMU():
 
 # Expects uniform 2d Array and averages along columns
 def averageValues(vals):
+    print(vals)
     return np.mean(vals[len(vals) - 10 : len(vals) ], 0)
+
+def readIMUmultiprocessing(sharedArr):
+    linear_accelerations = sharedArr[0]
+    angular_velocities = sharedArr[1]
+    return {"linear_accelerations": linear_accelerations, "angular_velocities": angular_velocities}
+
 
 
