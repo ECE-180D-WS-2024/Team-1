@@ -7,7 +7,7 @@ from Utilities.Orientation import Orientation
 from Utilities.ble_imu_decode import ble_imu_decode
 from Utilities.color_calibration import calibrate
 from multiprocessing import Process, Array
-from BLE_Module.BLE_Writer import asyncMultiprocessingRunner
+from GUI.ble_receiver import runner
 import numpy as np
 import os
 # Mistake threshold
@@ -26,9 +26,10 @@ PUZZLES = {
 def main():
 
     # Initialize shared memory
-    sharedArr = Array('f', [0] * IMU_WINDOW)
-    print(sharedArr)
-    p = Process(target=asyncMultiprocessingRunner, args=[sharedArr])
+    x_data = Array('f', [0.0] * IMU_WINDOW)
+    y_data = Array('f', [0.0] * IMU_WINDOW)
+    z_data = Array('f', [0.0] * IMU_WINDOW)
+    p = Process(target=runner, args=(x_data, y_data, z_data))
     p.start()
 
     wires.init()
@@ -81,7 +82,7 @@ def main():
             print("Hold bomb in desired position for 3 seconds and press enter to switch the puzzle")
             input() # Wait for input to check orientation
 
-            orientation = ble_imu_decode(sharedArr) # Decode orientation
+            orientation = ble_imu_decode(x_data, y_data, z_data) # Decode orientation
             if orientation == Orientation.FLAT and 'wires' in remaining_games:
                 game_key = 'wires'
             elif orientation == Orientation.UPSIDE_DOWN and  'localization' in remaining_games:
@@ -110,6 +111,7 @@ def main():
                 print("BOMB GOES BOOOOOOOOOOOOM, YOU LOSE!")
                 print()
                 print()
+                p.terminate()
                 return  # End the game immediately
             else:
                 print()
@@ -120,6 +122,7 @@ def main():
                 
     if len(completed_games) == len(PUZZLES):
         print("Congratulations! You've successfully defused the bomb by completing all puzzles!")
+        p.terminate()
 
 if __name__ == "__main__":
     main()

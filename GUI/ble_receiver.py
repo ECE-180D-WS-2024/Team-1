@@ -1,6 +1,7 @@
 from bleak import BleakScanner, BleakClient
 from bleak.backends.device import BLEDevice
 from enum import Enum, auto
+from multiprocessing import Process, Array
 import struct
 import math
 import asyncio
@@ -13,6 +14,7 @@ X_ANGULAR_VELO_CHAR_UUID = "4de63bcd-e713-4e28-9392-3cc1d7efbabc"
 Y_ANGULAR_VELO_CHAR_UUID = "99c07d47-9018-489b-a937-0d911a61aa69"
 Z_ANGULAR_VELO_CHAR_UUID = "85c17e72-fb28-4883-9333-479b20fce5a7"
 
+WINDOW_WIDTH = 10
 class Axis(Enum):
     X = auto()
     Y = auto()
@@ -100,6 +102,17 @@ class BLEController():
         data_dict['z'] = z
         
         return data_dict
+    
+    async def read_into_mem(self, shared_arr: list[float], axis: Axis, idx: int):
+        bytes = await self.read_gyro_axis(axis)
+       # t0 = time.time()
+        #t1 = time.time()
+        #print(f'took {(t1 - t0) * 1000}ms')
+        val = int.from_bytes(bytes, 'little', signed=True) / 1000.0
+        shared_arr[idx] = val
+
+async def waiter(to_wait):
+    return await to_wait
 
 async def main():
     controller = BLEController()
@@ -109,5 +122,25 @@ async def main():
     else:
         print("could not connect!")
 
+async def mainShared(x_arr, y_arr, z_arr):
+    controller = BLEController()
+    if await controller.connect():
+        idx = 0
+        while True:
+            await controller.read_into_mem(x_arr, Axis.X, idx)
+            await controller.read_into_mem(y_arr, Axis.Y, idx)
+            await controller.read_into_mem(z_arr, Axis.Z, idx)
+            idx = (idx + 1) % WINDOW_WIDTH
+    else:
+        print("could not connect!")
+
+def runner(x_arr, y_arr, z_arr):
+    asyncio.run(mainShared(x_arr, y_arr, z_arr))
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    x_arr = Array('f', [0.0] * WINDOW_WIDTH)
+    y_arr = Array('f', [0.0] * WINDOW_WIDTH)
+    z_arr = Array('f', [0.0] * WINDOW_WIDTH)
+    p = Process(target=runner, args=(x_arr, y_arr, z_arr))
+    p.start()
+    p.join()
