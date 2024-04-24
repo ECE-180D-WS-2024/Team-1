@@ -22,6 +22,48 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.rotY = 0.0
         self.rotZ = 0.0
 
+    def rotateXPositive(self):
+        curr_angle = 0
+        while curr_angle != 90:
+            self.setRotX(self.rotX + 1.5)
+            curr_angle += 1.5
+            self.updateGL()
+    
+    def rotateXNegative(self):
+        curr_angle = 0
+        while curr_angle != -90:
+            self.setRotX(self.rotX - 1.5)
+            curr_angle -= 1.5
+            self.updateGL()
+
+    def rotateYPositive(self):
+        curr_angle = 0
+        while curr_angle != 90:
+            self.setRotY(self.rotY + 1.5)
+            curr_angle += 1.5
+            self.updateGL()
+
+    def rotateYNegative(self):
+        curr_angle = 0
+        while curr_angle != -90:
+            self.setRotY(self.rotY - 1.5)
+            curr_angle -= 1.5
+            self.updateGL()
+
+    def rotateZPositive(self):
+        curr_angle = 0
+        while curr_angle != 90:
+            self.setRotZ(self.rotZ + 1.5)
+            curr_angle += 1.5
+            self.updateGL()
+
+    def rotateZNegative(self):
+        curr_angle = 0
+        while curr_angle != -90:
+            self.setRotZ(self.rotZ - 1.5)
+            curr_angle -= 1.5
+            self.updateGL()
+
     def setRotX(self, val):
         self.rotX = val
 
