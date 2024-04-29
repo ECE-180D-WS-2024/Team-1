@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+bleak = "==0.21.1"
+numpy = "==1.26.4"
+opencv-python = "==4.8.1.78"
+speechrecognition = "==3.10.1"
+panda3d = "==1.10.14"
+types-panda3d = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"
