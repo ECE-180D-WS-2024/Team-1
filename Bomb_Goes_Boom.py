@@ -4,9 +4,9 @@
 import random
 from Puzzles import localization, sequence, speech, wires
 from Utilities.Orientation import Orientation
-from Utilities.ble_imu_decode import ble_imu_decode
+from Utilities.decode import ble_imu_decode
 from Utilities.color_calibration import calibrate
-from multiprocessing import Process, Array
+from multiprocessing import Process, Value
 from GUI.ble_receiver import runner
 import numpy as np
 import os
@@ -26,10 +26,11 @@ PUZZLES = {
 def main():
 
     # Initialize shared memory
-    x_data = Array('f', [0.0] * IMU_WINDOW)
-    y_data = Array('f', [0.0] * IMU_WINDOW)
-    z_data = Array('f', [0.0] * IMU_WINDOW)
-    p = Process(target=runner, args=(x_data, y_data, z_data))
+    orientation = Value('i', 0)
+    time = Value('i', 0) # Use to get time value in seconds
+    direction = Value('i', 0)
+    wire = Value('i', 0)
+    p = Process(target=runner, args=(orientation, time, direction, wire))
     p.start()
 
     wires.init()
@@ -82,7 +83,7 @@ def main():
             print("Hold bomb in desired position for 3 seconds and press enter to switch the puzzle")
             input() # Wait for input to check orientation
 
-            orientation = ble_imu_decode(x_data, y_data, z_data) # Decode orientation
+            orientation = ble_imu_decode(orientation) # Decode orientation
             if orientation == Orientation.FLAT and 'wires' in remaining_games:
                 game_key = 'wires'
             elif orientation == Orientation.UPSIDE_DOWN and  'localization' in remaining_games:
