@@ -21,7 +21,7 @@ PUZZLES = {
     'localization': localization.start_localization,
     'sequence': sequence.start_sequence,
     'speech': speech.start_speech,
-    #'rgb_clock': rgb_clock.start_rgb_clock
+    'rgb_clock': rgb_clock.start_rgb_clock
 }
 
 
@@ -108,7 +108,7 @@ def main():
         game_func = PUZZLES[game_key]
         switch_condition = False
         print(f"\nStarting Puzzle...")
-        success = game_func(mistakes, time=time, wire=wire, seq=seq, skip=skip, speech=words)
+        success = game_func(mistakes, time=time, wire=wire, seq=seq, skip=skip, speech=words, rgb_color=color, rgb_freq=freq)
         
         if success:
             print("Puzzle Completed Successfully!")
