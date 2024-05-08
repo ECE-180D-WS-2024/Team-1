@@ -52,10 +52,10 @@ def game_loop(mistakes, **kwargs):
         print("The bomb shows the following characters:", code)
 
         print("Press the speech button to begin speech recognition (skip button to switch puzzles): ")
-        if (kwargs['skip'].value == 1 or kwargs['time'].value == 0):
-            return False
 
         while (kwargs['speech'].value == 0):
+            if (kwargs['skip'].value == 1 or kwargs['time'].value == 0):
+                return False
             pass
 
         # Initialize the recognizer

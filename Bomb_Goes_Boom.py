@@ -33,13 +33,14 @@ def main():
     wire = Value('i', 0) # Use to get Wire Selection
     skip = Value('i', 0)
     words = Value('i', 0)
+    rgb = Value('i', 0)
     color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
     freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
     encode_rgb = color * 10 + freq
     p_config = Process(target=configRunner, args=[encode_rgb])
     p_config.start()
     p_config.join()
-    p = Process(target=runner, args=(orientation, time, seq, wire, skip, words))
+    p = Process(target=runner, args=(orientation, time, seq, wire, skip, words, rgb))
     p.start()
 
     wires.init()
@@ -108,7 +109,7 @@ def main():
         game_func = PUZZLES[game_key]
         switch_condition = False
         print(f"\nStarting Puzzle...")
-        success = game_func(mistakes, time=time, wire=wire, seq=seq, skip=skip, speech=words, rgb_color=color, rgb_freq=freq)
+        success = game_func(mistakes, time=time, wire=wire, seq=seq, skip=skip, speech=words, rgb_color=color, rgb_freq=freq, rgb=rgb)
         
         if success:
             print("Puzzle Completed Successfully!")

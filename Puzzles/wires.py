@@ -51,8 +51,9 @@ def game_loop(mistakes, **kwargs):
         while(kwargs['wire'].value == last_choice or kwargs['wire'].value == 0):
             if kwargs['skip'].value == 1 or kwargs['time'].value == 0:
                 return False
-
+        
         user_choice = kwargs['wire'].value
+        print(user_choice)
         last_choice = user_choice
         
         # Determine the correct wire to cut

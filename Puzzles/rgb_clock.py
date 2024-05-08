@@ -1,12 +1,56 @@
-## COPY OF WIRES NEEDS WORK
 
-import random
-
-wires = []
-L = -1
-
-COLORS = ['r', 'y', 'b', 'g', 'w', 'o', 'k']  # Example colors: red, yellow, blue, green, white, orange, black
-
+def check_answer(time, color, freq):
+    lastDig = time % 10
+    tensDig = ((time // 10)  % 6) % 10
+    minsDig = time // 60
+    print(lastDig)
+    print(tensDig)
+    print(minsDig)
+    if (color == 5):
+        if (lastDig % 5 == 0):
+            return True
+        else:
+            return False
+    elif (color == 4 and freq == 1):
+        if (lastDig == 1):
+            return True
+        else:
+            return False
+    elif (color == 4):
+        if (lastDig == 2 or lastDig == 3 or lastDig == 5 or lastDig == 7):
+            return True
+        else:
+            return False
+    elif (color == 3 and freq == 0):
+        if (lastDig > tensDig):
+            return True
+        else:
+            return False
+    elif (color == 3):
+        if lastDig % 2 == 0:
+            return True
+        else:
+            return False
+    elif (color == 2):
+        if (minsDig == 0 or tensDig == 0 or lastDig == 0):
+            return True
+        else:
+            return False
+    elif (color == 1 and freq == 2):
+        if (tensDig == 2):
+            return True
+        else:
+            return False
+    elif (color == 1):
+        if (lastDig == 4):
+            return True
+        else:
+            return False
+    elif (color == 0):
+        if (lastDig == 1 and tensDig == 1):
+            return True
+        else:
+            return False
 
 def decide_wire_to_cut(wires, L):
     # Count the number of each color of wire
@@ -26,13 +70,7 @@ def decide_wire_to_cut(wires, L):
     
 
 def init():
-    global wires
-    global L
-    
-    # Generate a random sequence of 6 wires, add a black wire, and a random number L
-    wires = random.choices(COLORS, k=6)  # Choose 6 wires randomly
-    random.shuffle(wires)  # Shuffle the wires to mix the black wire randomly
-    L = random.randint(1, 9)  # Random number L between 1 and 9
+    pass
     
 def game_loop(mistakes, **kwargs):
     last_choice = 0
@@ -43,33 +81,32 @@ def game_loop(mistakes, **kwargs):
         if (kwargs['time'].value == 0):
             return False
         
-        # Print the wire sequence and color legend
-        print(f"There are 6 wires: {''.join(wires)}")
-        print(f"The bomb shows a number: {L}")
+        # Prompt the user to press the rgb
+        print("Press the RGB button down and don't let go!")
+        print("Note it's color and rate of flashing")
 
-        # Prompt the user for input
-        print("Your input to defuse this stage? ('s' to switch puzzles): ")
         # Wait for button press
-        while(kwargs['wire'].value == last_choice or kwargs['wire'].value == 0):
-            if kwargs['skip'].value == 1 or kwargs['time'].value == 0:
+        while(kwargs['rgb'].value == 0):
+            if kwargs['time'].value == 0:
                 return False
 
-        user_choice = kwargs['wire'].value
-        last_choice = user_choice
+        while(kwargs['rgb'].value == 1):
+            if kwargs['time'].value == 0:
+                return False
         
-        # Determine the correct wire to cut
-        correct_wire = decide_wire_to_cut(wires, L)
+        # Check if correct release time
+        result = check_answer(kwargs['time'].value, kwargs['rgb_color'], kwargs['rgb_freq'])
 
-        # Compare user input with correct wire
-        if int(user_choice) == correct_wire:
+        # Check result
+        if result:
             return True
         else:
-            mistakes[0] += 1
-            print('Wrong, Mistakes: ', mistakes[0])
+            mistakes[0] += 3
+            print('Wrong, EXPLODDDINGGGGGGGG')
             # Check if the player has made too many mistakes
             if mistakes[0] >= 3:
                 return False
 
 
-def start_wires(mistakes, **kwargs):
+def start_rgb_clock(mistakes, **kwargs):
     return game_loop(mistakes, **kwargs)

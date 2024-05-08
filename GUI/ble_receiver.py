@@ -24,6 +24,7 @@ START_CHAR_UUID = "d1b05699-f934-43e3-ae5f-2510118995f7"
 SKIP_CHAR_UUID = "31a276d9-606a-4089-971f-0c3c349a7374"
 SPEECH_CHAR_UUID = "068891ec-d3b6-4d8a-9572-d4292b02e729"
 RGB_CHAR_UUID = "5976c24b-7bf4-493f-84d6-11c8ca71d899"
+RGB_PRESSED_CHAR_UUID = "b12b0137-a6a4-4e6c-b3a2-824e5827afda"
 
 WINDOW_WIDTH = 10
 class Axis(Enum):
@@ -162,7 +163,7 @@ async def mainClock(t):
     else:
         print("could not connect!")
 
-async def mainAll(orientation, t, sequence, wire, skip, speech):
+async def mainAll(orientation, t, sequence, wire, skip, speech, rgb):
     controller = BLEController()
     if await controller.connect():
         await controller.activateHW()
@@ -173,6 +174,7 @@ async def mainAll(orientation, t, sequence, wire, skip, speech):
             wire.value = await controller.read_char(WIRE_CHAR_UUID)
             skip.value = await controller.read_char(SKIP_CHAR_UUID)
             speech.value = await controller.read_char(SPEECH_CHAR_UUID)
+            rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
 
 async def configRGB(encode_rgb):
     sub_controller = BLEController(device_name="RGB Config")
@@ -184,12 +186,12 @@ async def configRGB(encode_rgb):
                 await sub_controller.client.disconnect()
                 return
             
-def runner(orientation, t, sequence, wire, skip, speech):
-    asyncio.run(mainAll(orientation, t, sequence, wire, skip, speech))
+def runner(orientation, t, sequence, wire, skip, speech, rgb):
+    asyncio.run(mainAll(orientation, t, sequence, wire, skip, speech, rgb))
 
 def configRunner(encode_rgb):
     asyncio.run(configRGB(encode_rgb))
-    
+
 if __name__ == '__main__':
     orientation = Value('i', 0)
     t = Value('i', 0)
@@ -197,6 +199,7 @@ if __name__ == '__main__':
     wire = Value('i', 0)
     skip = Value('i', 0)
     speech = Value('i', 0)
-    p = Process(target=runner, args=(orientation, t, sequence, wire, skip, speech))
+    rgb = Value('i', 0)
+    p = Process(target=runner, args=(orientation, t, sequence, wire, skip, speech, rgb))
     p.start()
     p.join()
