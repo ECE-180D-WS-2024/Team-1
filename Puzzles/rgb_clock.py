@@ -1,3 +1,5 @@
+## COPY OF WIRES NEEDS WORK
+
 import random
 
 wires = []

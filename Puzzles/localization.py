@@ -179,5 +179,5 @@ def game_loop(mistakes):
     cap.release()
 
 
-def start_localization(mistakes):
+def start_localization(mistakes, **kwargs):
     return game_loop(mistakes)

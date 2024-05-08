@@ -2,35 +2,44 @@
 # warnings.simplefilter("ignore")
 
 import random
-from Puzzles import localization, sequence, speech, wires
+from Puzzles import localization, sequence, speech, wires, rgb_clock
 from Utilities.Orientation import Orientation
 from Utilities.decode import ble_imu_decode
 from Utilities.color_calibration import calibrate
 from multiprocessing import Process, Value
-from GUI.ble_receiver import runner
+from GUI.ble_receiver import runner, configRunner
 import numpy as np
 import os
 # Mistake threshold
 THRESHOLD = 3
 # Number of IMU readings averaged
 IMU_WINDOW = 10
+
 # Initialize the game state
 PUZZLES = {
     'wires': wires.start_wires,
     'localization': localization.start_localization,
     'sequence': sequence.start_sequence,
-    'speech': speech.start_speech
+    'speech': speech.start_speech,
+    #'rgb_clock': rgb_clock.start_rgb_clock
 }
 
 
 def main():
-
     # Initialize shared memory
-    orientation = Value('i', 0)
+    orientation = Value('i', 0) # Use to get Orientation
     time = Value('i', 0) # Use to get time value in seconds
-    direction = Value('i', 0)
-    wire = Value('i', 0)
-    p = Process(target=runner, args=(orientation, time, direction, wire))
+    seq = Value('i', 0) # Use to get Sequence Selection
+    wire = Value('i', 0) # Use to get Wire Selection
+    skip = Value('i', 0)
+    words = Value('i', 0)
+    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
+    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
+    encode_rgb = color * 10 + freq
+    p_config = Process(target=configRunner, args=[encode_rgb])
+    p_config.start()
+    p_config.join()
+    p = Process(target=runner, args=(orientation, time, seq, wire, skip, words))
     p.start()
 
     wires.init()
@@ -83,14 +92,14 @@ def main():
             print("Hold bomb in desired position for 3 seconds and press enter to switch the puzzle")
             input() # Wait for input to check orientation
 
-            orientation = ble_imu_decode(orientation) # Decode orientation
-            if orientation == Orientation.FLAT and 'wires' in remaining_games:
+            orientation_val = ble_imu_decode(orientation.value) # Decode orientation
+            if orientation_val == Orientation.FLAT and 'wires' in remaining_games:
                 game_key = 'wires'
-            elif orientation == Orientation.UPSIDE_DOWN and  'localization' in remaining_games:
+            elif orientation_val == Orientation.UPSIDE_DOWN and  'localization' in remaining_games:
                 game_key = 'localization'
-            elif orientation == Orientation.ANTENNA_UP and 'sequence' in remaining_games:
+            elif orientation_val == Orientation.ANTENNA_UP and 'sequence' in remaining_games:
                 game_key = 'sequence'
-            elif orientation == Orientation.ANTENNA_DOWN and 'speech' in remaining_games:
+            elif orientation_val == Orientation.ANTENNA_DOWN and 'speech' in remaining_games:
                 game_key = 'speech'
             else:
                 print("unrecognized orientation, current puzzle will remain active")
@@ -99,14 +108,14 @@ def main():
         game_func = PUZZLES[game_key]
         switch_condition = False
         print(f"\nStarting Puzzle...")
-        success = game_func(mistakes)
+        success = game_func(mistakes, time=time, wire=wire, seq=seq, skip=skip, speech=words)
         
         if success:
             print("Puzzle Completed Successfully!")
             completed_games.add(game_key)
             last_game = None  # Reset last game since this game was successful
         else:
-            if mistakes[0] >= THRESHOLD:
+            if mistakes[0] >= THRESHOLD or time.value == 0:
                 print()
                 print()
                 print("BOMB GOES BOOOOOOOOOOOOM, YOU LOSE!")

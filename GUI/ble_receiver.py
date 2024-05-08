@@ -17,10 +17,13 @@ Z_ANGULAR_VELO_CHAR_UUID = "85c17e72-fb28-4883-9333-479b20fce5a7"
 
 
 ORIENTATION_CHAR_UUID = "ba90a02e-9acd-4f6b-8d2d-db52abdab1ab"
-DIRECTION_CHAR_UUID = "2e1c9e14-a3d6-41d6-a484-114375527aa6"
+SEQUENCE_CHAR_UUID = "2e1c9e14-a3d6-41d6-a484-114375527aa6"
 WIRE_CHAR_UUID = "5101a8d5-e8da-4ef6-9e03-1c0573d25429"
 TIME_CHAR_UUID = "2e92fbab-6365-4ce6-aa19-9b1fe217888c"
 START_CHAR_UUID = "d1b05699-f934-43e3-ae5f-2510118995f7"
+SKIP_CHAR_UUID = "31a276d9-606a-4089-971f-0c3c349a7374"
+SPEECH_CHAR_UUID = "068891ec-d3b6-4d8a-9572-d4292b02e729"
+RGB_CHAR_UUID = "5976c24b-7bf4-493f-84d6-11c8ca71d899"
 
 WINDOW_WIDTH = 10
 class Axis(Enum):
@@ -128,6 +131,9 @@ class BLEController():
     async def activateHW(self):
         await self.client.write_gatt_char(START_CHAR_UUID, bytearray([1]))
 
+    async def configRGB(self, encode_rgb: int):
+        await self.client.write_gatt_char(RGB_CHAR_UUID, bytearray([encode_rgb]))
+
 async def main():
     controller = BLEController()
     if await controller.connect():
@@ -156,28 +162,41 @@ async def mainClock(t):
     else:
         print("could not connect!")
 
-async def mainAll(orientation, t, direction, wire):
+async def mainAll(orientation, t, sequence, wire, skip, speech):
     controller = BLEController()
     if await controller.connect():
         await controller.activateHW()
         while True:
             orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
             t.value = await controller.read_char(TIME_CHAR_UUID)
-            direction.value = await controller.read_char(DIRECTION_CHAR_UUID)
+            sequence.value = await controller.read_char(SEQUENCE_CHAR_UUID)
             wire.value = await controller.read_char(WIRE_CHAR_UUID)
-            print("orientation: " + str(orientation.value))
-            print("time: " + str(t.value))
-            print("direction: " + str(direction.value))
-            print("wire cut: "  + str(wire.value))
+            skip.value = await controller.read_char(SKIP_CHAR_UUID)
+            speech.value = await controller.read_char(SPEECH_CHAR_UUID)
 
-def runner(orientation, t, direction, wire):
-    asyncio.run(mainAll(orientation, t, direction, wire))
+async def configRGB(encode_rgb):
+    sub_controller = BLEController(device_name="RGB Config")
+    if await sub_controller.connect():
+        await sub_controller.configRGB(encode_rgb)
+        while True:
+            ack = await sub_controller.read_char(RGB_CHAR_UUID)
+            if ack == -1:
+                await sub_controller.client.disconnect()
+                return
+            
+def runner(orientation, t, sequence, wire, skip, speech):
+    asyncio.run(mainAll(orientation, t, sequence, wire, skip, speech))
 
+def configRunner(encode_rgb):
+    asyncio.run(configRGB(encode_rgb))
+    
 if __name__ == '__main__':
     orientation = Value('i', 0)
     t = Value('i', 0)
-    direction = Value('i', 0)
+    sequence = Value('i', 0)
     wire = Value('i', 0)
-    p = Process(target=runner, args=(orientation, t, direction, wire))
+    skip = Value('i', 0)
+    speech = Value('i', 0)
+    p = Process(target=runner, args=(orientation, t, sequence, wire, skip, speech))
     p.start()
     p.join()
