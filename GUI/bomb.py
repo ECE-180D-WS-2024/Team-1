@@ -52,8 +52,9 @@ class BombApp(ShowBase):
         seq_num_np = self.bomb.find("**/seq.num")
         ss_num_np = self.bomb.find("**/ss.num")
         wire_num_np = self.bomb.find("**/wire.num")
-        self.hold_num_text = self.setup_num_display(hold_num_np, 'hold', -0.1, -0.075, 0.5, 90, 270, 90)
-        self.seq_num_text = self.setup_num_display(seq_num_np, 'seq', 0.1, -0.075, -0.5, 0, 90, 180)
+        self.hold_num_text = self.setup_num_display(hold_num_np, 'hold', -0.1, -0.1, 0.5, 90, 270, 90)
+        self.seq_num_text = self.setup_num_display(seq_num_np, 'seq', 0.1, -0.1, -0.5, 0, 90, 180)
+        self.ss_num_text = self.setup_num_display(ss_num_np, 'ss', 0.1, 0.1, -0.5, 0, 90, 270)
 
         self.spotlight = Spotlight("spotlight")
         self.spotlight_np = self.render.attachNewNode(self.spotlight)
@@ -76,7 +77,7 @@ class BombApp(ShowBase):
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
 
-        self.rotate_bomb_sequence()
+        self.rotate_bomb_simon_says()
 
     def setup_num_display(self, disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
         disp_text_bg_node = TextNode(f'{puzzle_name}.disp_bg')
