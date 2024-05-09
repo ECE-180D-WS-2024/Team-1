@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c78bd80a1761416da6d33d33965c92d0cbb29a7f1256e77a3d5015c2c754af01"
+            "sha256": "a51d79365250161ecb0141b4bd3e3937ab4334a62a84e9a75e3ba85546564b41"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -264,6 +264,30 @@
             "index": "pypi",
             "version": "==1.10.14"
         },
+        "panda3d-blend2bam": {
+            "hashes": [
+                "sha256:adfb3d3ea097a831c9d73f7d0c4dfd7fb0a8e180d1dbab3f8dd31d51cb1b1796",
+                "sha256:e52447664eaad157d5ccf4926a34bd4d2779214b381d482d3ae85958d94efdba"
+            ],
+            "index": "pypi",
+            "version": "==0.25.0"
+        },
+        "panda3d-gltf": {
+            "hashes": [
+                "sha256:3d16e95ab27699a926ea9524a90735f799680660ebac624649644a225bfd4b40",
+                "sha256:c351ee0e66236c4d639dc2c56bff3cff7c403f53958dc7780a8333b219f384e4"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==1.1.0"
+        },
+        "panda3d-simplepbr": {
+            "hashes": [
+                "sha256:6c43d1990ff07840cf1c557561d6122fd1250d8e76aacf227b61c3789149bcf9",
+                "sha256:c71d490afeeb3a90455dcfde1d30c41f321a38742a97d18834e5c31016331ed5"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==0.12.0"
+        },
         "pyobjc-core": {
             "hashes": [
                 "sha256:0fa950f092673883b8bd28bc18397415cabb457bf410920762109b411789ade9",
@@ -345,7 +369,7 @@
                 "sha256:83f085bd5ca59c80295fc2a82ab5dac679cbe02b9f33f7d83af68e241bea51b0",
                 "sha256:c1f94d72897edaf4ce775bb7558d5b79d8126906a14ea5ed1635921406c0387a"
             ],
-            "markers": "python_version < '3.12'",
+            "markers": "python_version >= '3.8'",
             "version": "==4.11.0"
         },
         "urllib3": {

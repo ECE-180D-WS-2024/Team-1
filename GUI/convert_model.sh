@@ -1,0 +1,1 @@
+blend2bam ../../../blender/bomb.blend assets/model/bomb.bam
