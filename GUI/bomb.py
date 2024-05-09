@@ -116,6 +116,8 @@ class BombApp(ShowBase):
         self.accept('b', self.set_ss_light, extraArgs=['blue'])
         self.accept('space', self.press_hold_button)
         self.accept('space-up', self.release_hold_button)
+
+        # Magic numbers are from original positions. Data gathered from calling .ls() on node paths
         self.accept('i', self.press_sequence_button, extraArgs=[(0, 0), (0.200018, 1.04975, 0.193841)])
         self.accept('o', self.press_sequence_button, extraArgs=[(0, 1), (-0.199982, 1.04975, 0.193841)])
         self.accept('k', self.press_sequence_button, extraArgs=[(1, 0), (0.200018, 1.04975, -0.206159)])
@@ -165,7 +167,6 @@ class BombApp(ShowBase):
         i, j = btn_coord
         x, y, z = initial_pos
         btn = self.bomb.find(f'**/seq.btn{i}{j}')
-        btn.ls()
         seq = Sequence(btn.posInterval(0.2, (x, y - 0.1, z)), btn.posInterval(0.2, (x, y, z)))
         seq.start()
 
