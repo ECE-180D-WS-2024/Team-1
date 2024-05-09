@@ -2,8 +2,9 @@ import random
 
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
+from direct.interval.IntervalGlobal import Sequence
 
-from panda3d.core import TextNode, DirectionalLight, PointLight, Spotlight, NodePath, PandaNode
+from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
 class BombApp(ShowBase):
     def __init__(self):
@@ -115,6 +116,11 @@ class BombApp(ShowBase):
         self.accept('b', self.set_ss_light, extraArgs=['blue'])
         self.accept('space', self.press_hold_button)
         self.accept('space-up', self.release_hold_button)
+        self.accept('i', self.press_sequence_button, extraArgs=[(0, 0), (0.200018, 1.04975, 0.193841)])
+        self.accept('o', self.press_sequence_button, extraArgs=[(0, 1), (-0.199982, 1.04975, 0.193841)])
+        self.accept('k', self.press_sequence_button, extraArgs=[(1, 0), (0.200018, 1.04975, -0.206159)])
+        self.accept('l', self.press_sequence_button, extraArgs=[(1, 1), (-0.199982, 1.04975, -0.206159)])
+
 
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
@@ -154,6 +160,14 @@ class BombApp(ShowBase):
         else:
             ss_sphere_np.setLightOff(sphere_light_np)
         self.ss_state[color_str] = (ss_sphere_np, sphere_light_np, not is_on)
+
+    def press_sequence_button(self, btn_coord, initial_pos):
+        i, j = btn_coord
+        x, y, z = initial_pos
+        btn = self.bomb.find(f'**/seq.btn{i}{j}')
+        btn.ls()
+        seq = Sequence(btn.posInterval(0.2, (x, y - 0.1, z)), btn.posInterval(0.2, (x, y, z)))
+        seq.start()
 
     def set_wire_hpr(self, wire_np, direction):
             h, p, r = wire_np.getHpr()
