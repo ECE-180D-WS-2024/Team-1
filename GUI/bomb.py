@@ -49,11 +49,15 @@ class BombApp(ShowBase):
         self.timer_light_np.setPos(0, 0, 0.5)
 
         hold_num_np = self.bomb.find("**/hold.num")
-        self.setup_num_display(hold_num_np, 'hold', -0.1, -0.075, 0.5, 90, 270, 90)
+        seq_num_np = self.bomb.find("**/seq.num")
+        ss_num_np = self.bomb.find("**/ss.num")
+        wire_num_np = self.bomb.find("**/wire.num")
+        self.hold_num_text = self.setup_num_display(hold_num_np, 'hold', -0.1, -0.075, 0.5, 90, 270, 90)
+        self.seq_num_text = self.setup_num_display(seq_num_np, 'seq', 0.1, -0.075, -0.5, 0, 90, 180)
 
         self.spotlight = Spotlight("spotlight")
         self.spotlight_np = self.render.attachNewNode(self.spotlight)
-        self.spotlight_np.setPos(4, -4, 3)
+        self.spotlight_np.setPos(-4, -4, 4)
         self.spotlight_np.lookAt(self.bomb)
         self.render.setLight(self.spotlight_np)
 
@@ -72,6 +76,8 @@ class BombApp(ShowBase):
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
 
+        self.rotate_bomb_sequence()
+
     def setup_num_display(self, disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
         disp_text_bg_node = TextNode(f'{puzzle_name}.disp_bg')
         disp_text_bg_node.setText("88")
@@ -83,7 +89,7 @@ class BombApp(ShowBase):
         disp_text_bg_np.setScale(0.125, 0.125, 0.2)
 
         disp_text_node = TextNode(f'{puzzle_name}.disp')
-        disp_text_node.setText("12")
+        disp_text_node.setText("88")
         disp_text_node.setTextColor(255, 255, 255, 1)
         disp_text_node.setFont(self.font_ssd)
         disp_text_np = disp_np.attach_new_node(disp_text_node)
@@ -91,10 +97,7 @@ class BombApp(ShowBase):
         disp_text_np.setHpr(h, p, r)
         disp_text_np.setScale(0.125, 0.125, 0.2)
 
-        return disp_text_np
-
-
-
+        return disp_text_node
 
     def cut_wire(self, wire_idx):
         if not self.wire_cut[wire_idx]:
