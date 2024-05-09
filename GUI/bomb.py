@@ -19,7 +19,7 @@ class BombApp(ShowBase):
 
         self.bomb = self.loader.loadModel("assets/model/bomb.bam")
         self.bomb.reparentTo(self.render)
-        self.bomb.setPos(0, 7.5, 0)
+        self.bomb.setPos(0, 5.5, 0)
         self.bomb.setHpr(0, 90, 0)
         timer_node = self.bomb.find("**/timer")
         
@@ -78,7 +78,6 @@ class BombApp(ShowBase):
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
 
-        self.rotate_bomb_wires()
 
     def setup_num_display(self, disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
         disp_text_bg_node = TextNode(f'{puzzle_name}.disp_bg')
