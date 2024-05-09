@@ -113,6 +113,8 @@ class BombApp(ShowBase):
         self.accept('g', self.set_ss_light, extraArgs=['green'])
         self.accept('y', self.set_ss_light, extraArgs=['yellow'])
         self.accept('b', self.set_ss_light, extraArgs=['blue'])
+        self.accept('space', self.press_hold_button)
+        self.accept('space-up', self.release_hold_button)
 
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
@@ -150,14 +152,22 @@ class BombApp(ShowBase):
         if not is_on:
             ss_sphere_np.setLight(sphere_light_np)
         else:
-            ss_sphere_np.clearLight(sphere_light_np)
+            ss_sphere_np.setLightOff(sphere_light_np)
         self.ss_state[color_str] = (ss_sphere_np, sphere_light_np, not is_on)
-        
 
     def set_wire_hpr(self, wire_np, direction):
             h, p, r = wire_np.getHpr()
             angle = random.randint(18, 25)
             wire_np.setHpr(h + direction * angle, p, r)
+
+    def press_hold_button(self):
+        hold_button = self.bomb.find('**/hold.btn')
+        hold_button.posInterval(0.25, (0.011577, -0.463809, 0.506159)).start()
+
+    def release_hold_button(self):
+        hold_button = self.bomb.find('**/hold.btn')
+        # Magic numbers are from button_np.ls(); they're the original position
+        hold_button.posInterval(0.25, (0.011577, -0.463809, 0.606159)).start()
 
     def rotate_bomb_timer(self):
         self.bomb.hprInterval(0.25, (0, 90, 0)).start()
@@ -196,13 +206,13 @@ class BombApp(ShowBase):
         mins_str = str(mins).zfill(2)
         secs_str = str(secs).zfill(2)
         self.timer_text_node.setText(f'{mins_str}:{secs_str}')
-        self.sound_beep.play()
         return task.again
     
     def blink_timer_light(self, task: Task):
         if not self.timer_light_on:
             self.timer_sphere_np.setLight(self.timer_light_np)
             self.timer_light_on = True
+            self.sound_beep.play()
             task.delayTime = 0.5
         else:
             self.timer_sphere_np.setLightOff(self.timer_light_np)
