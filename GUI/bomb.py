@@ -12,6 +12,7 @@ class BombApp(ShowBase):
         self.secs_remain = 180
         self.timer_light_on = False
         self.wire_cut = [False] * 7
+        self.ss_state = {}
 
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
@@ -35,6 +36,7 @@ class BombApp(ShowBase):
         # Setup post-processed components
         self.__setup_timer()
         self.__setup_num_displays()
+        self.__setup_simon_says()
 
         self.__setup_controls()
 
@@ -107,8 +109,34 @@ class BombApp(ShowBase):
         self.accept('a', self.rotate_bomb_sequence)
         self.accept('s', self.rotate_bomb_timer)
         self.accept('d', self.rotate_bomb_feet)
+        self.accept('r', self.set_ss_light, extraArgs=['red'])
+        self.accept('g', self.set_ss_light, extraArgs=['green'])
+        self.accept('y', self.set_ss_light, extraArgs=['yellow'])
+        self.accept('b', self.set_ss_light, extraArgs=['blue'])
+
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
+
+    def __setup_simon_says(self):
+        def setup_light(color_str, color_vec):
+            ss_sphere_np = self.bomb.find(f"**/ss.{color_str}")
+            sphere_light_node = PointLight(f"ss.{color_str}_light")
+            sphere_light_node.setColor(color_vec)
+
+            sphere_light_np = ss_sphere_np.attachNewNode(sphere_light_node)
+            sphere_light_np.setPos(0, 0, 0.5)
+
+            return (ss_sphere_np, sphere_light_np)
+
+        ss_red_nps = setup_light('red', (255, 0, 0, 0))
+        ss_green_nps = setup_light('green', (0, 255, 0, 0))
+        ss_blue_nps = setup_light('blue', (0, 0, 255, 0))
+        ss_yellow_nps = setup_light('yellow', (255, 255, 0, 0))
+
+        self.ss_state['red'] = (*ss_red_nps, False)
+        self.ss_state['green'] = (*ss_green_nps, False)
+        self.ss_state['blue'] = (*ss_blue_nps, False)
+        self.ss_state['yellow'] = (*ss_yellow_nps, False)
 
     def cut_wire(self, wire_idx):
         if not self.wire_cut[wire_idx]:
@@ -116,6 +144,15 @@ class BombApp(ShowBase):
             wire_top_np = self.bomb.find(f'**/wire{wire_idx - 1}.top')
             self.set_wire_hpr(wire_top_np, direction)
             self.wire_cut[wire_idx] = True
+
+    def set_ss_light(self, color_str):
+        (ss_sphere_np, sphere_light_np, is_on) = self.ss_state[color_str]
+        if not is_on:
+            ss_sphere_np.setLight(sphere_light_np)
+        else:
+            ss_sphere_np.clearLight(sphere_light_np)
+        self.ss_state[color_str] = (ss_sphere_np, sphere_light_np, not is_on)
+        
 
     def set_wire_hpr(self, wire_np, direction):
             h, p, r = wire_np.getHpr()
@@ -172,8 +209,6 @@ class BombApp(ShowBase):
             self.timer_light_on = False
             task.delayTime = 0.5
         return task.again
-
-
 
 app = BombApp()
 app.run()
