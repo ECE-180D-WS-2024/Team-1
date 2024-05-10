@@ -1,5 +1,8 @@
 import random
 
+from puzzles import localization, wires, sequence, speech
+from util.color_calibration import calibrate
+
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from direct.interval.IntervalGlobal import Sequence
@@ -7,7 +10,7 @@ from direct.interval.IntervalGlobal import Sequence
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
 class BombApp(ShowBase):
-    def __init__(self):
+    def __init__(self, color_calibration):
         ShowBase.__init__(self)
         # Setup state
         self.secs_remain = 180
@@ -37,7 +40,7 @@ class BombApp(ShowBase):
         # Setup post-processed components
         self.__setup_timer()
         self.__setup_num_displays()
-        self.__setup_simon_says()
+        self.__setup_localization(color_calibration)
         self.__setup_wires()
 
         self.__setup_controls()
@@ -77,7 +80,7 @@ class BombApp(ShowBase):
         def setup_num_display(disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
             disp_text_bg_node = TextNode(f'{puzzle_name}.disp_bg')
             disp_text_bg_node.setText("88")
-            disp_text_bg_node.setTextColor(255, 255, 255, 0.3)
+            disp_text_bg_node.setTextColor(255, 255, 255, 0.2)
             disp_text_bg_node.setFont(self.font_ssd)
             disp_text_bg_np = disp_np.attach_new_node(disp_text_bg_node)
             disp_text_bg_np.setPos(posX, posY, posZ)
@@ -85,7 +88,6 @@ class BombApp(ShowBase):
             disp_text_bg_np.setScale(0.125, 0.125, 0.2)
 
             disp_text_node = TextNode(f'{puzzle_name}.disp')
-            disp_text_node.setText("14")
             disp_text_node.setTextColor(255, 255, 255, 1)
             disp_text_node.setFont(self.font_ssd)
             disp_text_np = disp_np.attach_new_node(disp_text_node)
@@ -127,7 +129,7 @@ class BombApp(ShowBase):
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
 
-    def __setup_simon_says(self):
+    def __setup_localization(self, color_calibration):
         def setup_light(color_str, color_vec):
             ss_sphere_np = self.bomb.find(f"**/ss.{color_str}")
             sphere_light_node = PointLight(f"ss.{color_str}_light")
@@ -147,6 +149,8 @@ class BombApp(ShowBase):
         self.ss_state['green'] = (*ss_green_nps, False)
         self.ss_state['blue'] = (*ss_blue_nps, False)
         self.ss_state['yellow'] = (*ss_yellow_nps, False)
+
+        localization.init(color_calibration)
 
     def __setup_wires(self):
         self.wire_colors = random.choices(['r', 'g', 'y', 'b', 'w', 'o', 'k'], k=6)
@@ -258,5 +262,9 @@ class BombApp(ShowBase):
             task.delayTime = 0.5
         return task.again
 
-app = BombApp()
-app.run()
+def main():
+    app = BombApp(calibrate())
+    app.run()
+
+if __name__ == '__main__':
+    main()
