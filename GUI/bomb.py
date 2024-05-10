@@ -6,23 +6,35 @@ from util.color_calibration import calibrate
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from direct.interval.IntervalGlobal import Sequence
+from direct.gui.OnscreenImage import OnscreenImage
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
 class BombApp(ShowBase):
-    def __init__(self, color_calibration):
+    def __init__(self, enable_localization=False):
         ShowBase.__init__(self)
         # Setup state
         self.secs_remain = 180
         self.timer_light_on = False
         self.wire_cut = [False] * 7
         self.ss_state = {}
+        self.mistakes = 0
+        self.max_mistakes = 3
 
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
 
         self.font_ssd = self.loader.loadFont("assets/font/seven_segment.ttf")
         self.font_ssd.setPixelsPerUnit(60)
+
+        self.mistake_icons = []
+        for i in range(self.max_mistakes):
+            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
+                                 pos = (-1.275 + i*0.11, 0, 0.95),
+                                 scale = 0.04)
+            icon.setTransparency(True)
+            icon.hide()
+            self.mistake_icons.append(icon)
 
         # Setup scene
         self.bomb = self.loader.loadModel("assets/model/bomb.bam")
@@ -40,7 +52,8 @@ class BombApp(ShowBase):
         # Setup post-processed components
         self.__setup_timer()
         self.__setup_num_displays()
-        self.__setup_localization(color_calibration)
+        if enable_localization:
+            self.__setup_localization(calibrate())
         self.__setup_wires()
 
         self.__setup_controls()
@@ -154,6 +167,9 @@ class BombApp(ShowBase):
 
     def __setup_wires(self):
         self.wire_colors = random.choices(['r', 'g', 'y', 'b', 'w', 'o', 'k'], k=6)
+        self.wire_num = random.randint(1, 9)
+        self.wire_num_text.setText(str(self.wire_num).zfill(2))
+        self.correct_wire = wires.decide_wire_to_cut(self.wire_colors, self.wire_num)
 
         materials = self.bomb.findAllMaterials('wire.*')
         material_dict = {
@@ -181,6 +197,12 @@ class BombApp(ShowBase):
             wire_top_np = self.bomb.find(f'**/wire{wire_idx - 1}.top')
             self.set_wire_hpr(wire_top_np, direction)
             self.wire_cut[wire_idx] = True
+            if wire_idx != self.correct_wire:
+                self.handle_mistake()
+
+    def handle_mistake(self):
+        self.mistake_icons[self.mistakes].show()
+        self.mistakes += 1
 
     def set_ss_light(self, color_str):
         (ss_sphere_np, sphere_light_np, is_on) = self.ss_state[color_str]
@@ -263,7 +285,7 @@ class BombApp(ShowBase):
         return task.again
 
 def main():
-    app = BombApp(calibrate())
+    app = BombApp(enable_localization=False)
     app.run()
 
 if __name__ == '__main__':
