@@ -1,5 +1,7 @@
 import random
 
+from argparse import ArgumentParser
+
 from puzzles import localization, wires, sequence, speech
 from util.color_calibration import calibrate
 
@@ -11,7 +13,7 @@ from direct.gui.OnscreenImage import OnscreenImage
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
 class BombApp(ShowBase):
-    def __init__(self, enable_localization=False):
+    def __init__(self, no_color_calibration=False):
         ShowBase.__init__(self)
         # Setup state
         self.secs_remain = 180
@@ -52,8 +54,11 @@ class BombApp(ShowBase):
         # Setup post-processed components
         self.__setup_timer()
         self.__setup_num_displays()
-        if enable_localization:
+        if no_color_calibration:
+            self.__setup_localization([0,0,0])
+        else:
             self.__setup_localization(calibrate())
+
         self.__setup_wires()
 
         self.__setup_controls()
@@ -285,7 +290,11 @@ class BombApp(ShowBase):
         return task.again
 
 def main():
-    app = BombApp(enable_localization=False)
+    parser = ArgumentParser(prog="Bomb goes boom")
+    parser.add_argument('--no-color-calibration', action='store_true')
+    args = parser.parse_args()
+
+    app = BombApp(no_color_calibration=args.no_color_calibration)
     app.run()
 
 if __name__ == '__main__':
