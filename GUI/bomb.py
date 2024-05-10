@@ -38,6 +38,7 @@ class BombApp(ShowBase):
         self.__setup_timer()
         self.__setup_num_displays()
         self.__setup_simon_says()
+        self.__setup_wires()
 
         self.__setup_controls()
 
@@ -123,7 +124,6 @@ class BombApp(ShowBase):
         self.accept('k', self.press_sequence_button, extraArgs=[(1, 0), (0.200018, 1.04975, -0.206159)])
         self.accept('l', self.press_sequence_button, extraArgs=[(1, 1), (-0.199982, 1.04975, -0.206159)])
 
-
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
 
@@ -147,6 +147,26 @@ class BombApp(ShowBase):
         self.ss_state['green'] = (*ss_green_nps, False)
         self.ss_state['blue'] = (*ss_blue_nps, False)
         self.ss_state['yellow'] = (*ss_yellow_nps, False)
+
+    def __setup_wires(self):
+        self.wire_colors = random.choices(['r', 'g', 'y', 'b'], k=6)
+
+        materials = self.bomb.findAllMaterials('wire.*')
+        material_dict = {
+            'r': materials.findMaterial('wire.red'),
+            'g': materials.findMaterial('wire.green'),
+            'y': materials.findMaterial('wire.yellow'),
+            'b': materials.findMaterial('wire.blue')
+        }
+
+        for i in range(6):
+            top_np = self.bomb.find(f'**/wire{i}.top')
+            bot_np = self.bomb.find(f'**/wire{i}.bottom')
+
+            wire_color = self.wire_colors[i]
+            material = material_dict[wire_color]
+            top_np.setMaterial(material, 1)
+            bot_np.setMaterial(material, 1)
 
     def cut_wire(self, wire_idx):
         if not self.wire_cut[wire_idx]:
