@@ -1,4 +1,5 @@
 import random
+import sys
 
 from argparse import ArgumentParser
 
@@ -208,6 +209,8 @@ class BombApp(ShowBase):
     def handle_mistake(self):
         self.mistake_icons[self.mistakes].show()
         self.mistakes += 1
+        if self.mistakes == 3:
+            sys.exit()
 
     def set_ss_light(self, color_str):
         (ss_sphere_np, sphere_light_np, is_on) = self.ss_state[color_str]
