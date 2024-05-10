@@ -149,14 +149,17 @@ class BombApp(ShowBase):
         self.ss_state['yellow'] = (*ss_yellow_nps, False)
 
     def __setup_wires(self):
-        self.wire_colors = random.choices(['r', 'g', 'y', 'b'], k=6)
+        self.wire_colors = random.choices(['r', 'g', 'y', 'b', 'w', 'o', 'k'], k=6)
 
         materials = self.bomb.findAllMaterials('wire.*')
         material_dict = {
             'r': materials.findMaterial('wire.red'),
             'g': materials.findMaterial('wire.green'),
             'y': materials.findMaterial('wire.yellow'),
-            'b': materials.findMaterial('wire.blue')
+            'b': materials.findMaterial('wire.blue'),
+            'w': materials.findMaterial('wire.white'),
+            'o': materials.findMaterial('wire.orange'),
+            'k': materials.findMaterial('wire.black')
         }
 
         for i in range(6):
