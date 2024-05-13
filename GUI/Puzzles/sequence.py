@@ -58,8 +58,8 @@ def init(app):
     __render_btn_symbol(app.bomb, (1, 0), randomized_ordering[2])
     __render_btn_symbol(app.bomb, (1, 1), randomized_ordering[3])
 
-def focus(bomb: NodePath):
-    bomb.hprInterval(0.25, (180, 0, 0)).start()
+def focus(bomb_np: NodePath):
+    bomb_np.hprInterval(0.25, (180, 0, 0)).start()
 
 def press_btn(app, btn_coord, initial_pos):
     btn = __get_btn_np(app.bomb, btn_coord)

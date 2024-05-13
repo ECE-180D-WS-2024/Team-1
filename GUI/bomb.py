@@ -127,7 +127,7 @@ class BombApp(ShowBase):
     def __setup_controls(self):
         self.accept('q', self.rotate_bomb_simon_says)
         self.accept('w', self.rotate_bomb_binary)
-        self.accept('e', self.rotate_bomb_wires)
+        self.accept('e', wires.focus, extraArgs=[self.bomb])
         self.accept('a', sequence.focus, extraArgs=[self.bomb])
         self.accept('s', self.rotate_bomb_timer)
         self.accept('d', self.rotate_bomb_feet)
@@ -208,10 +208,6 @@ class BombApp(ShowBase):
 
     def rotate_bomb_simon_says(self):
         self.bomb.hprInterval(0.25, (90, 0, 0)).start()
-        pass
-
-    def rotate_bomb_wires(self):
-        self.bomb.hprInterval(0.25, (-90, 0, 0)).start()
         pass
 
     def rotate_bomb_binary(self):

@@ -53,6 +53,9 @@ def init(app):
         top_np.setMaterial(material, 1)
         bot_np.setMaterial(material, 1)
 
+def focus(bomb_np):
+    bomb_np.hprInterval(0.25, (-90, 0, 0)).start()
+
 def __set_wire_hpr(wire_np, direction):
     h, p, r = wire_np.getHpr()
     angle = random.randint(18, 25)
