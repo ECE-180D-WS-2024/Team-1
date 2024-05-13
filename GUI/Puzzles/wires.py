@@ -1,4 +1,5 @@
 import random
+from puzzles import Puzzle
 
 wire_cut = [False] * 6
 wires = []
@@ -31,7 +32,7 @@ def init(app):
     rand_num = random.randint(1, 9)
     correct_wire = __get_correct_wire(wires, rand_num)
     
-    app.wire_num_text.setText(str(rand_num).zfill(2))
+    app.num_texts[int(Puzzle.WIRES)].setText(str(rand_num).zfill(2))
 
     materials = app.bomb.findAllMaterials('wire.*')
     material_dict = {
@@ -69,3 +70,5 @@ def cut_wire(app, wire_idx):
         wire_cut[wire_idx] = True
         if wire_idx != correct_wire:
             app.handle_mistake()
+        else:
+            app.solve_puzzle(Puzzle.WIRES)

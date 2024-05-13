@@ -5,6 +5,8 @@ from typing import Tuple
 from direct.interval.IntervalGlobal import Sequence
 from panda3d.core import TextNode, NodePath
 
+from puzzles import Puzzle
+
 
 # Define the manual with sequences for each row
 MANUAL = [ 
@@ -78,3 +80,6 @@ def press_btn(app, btn_coord, initial_pos):
         else:
             Sequence(press_interval, release_interval).start()
             app.handle_mistake()
+    
+    if all(btn_depressed):
+        app.solve_puzzle(Puzzle.SEQUENCE)

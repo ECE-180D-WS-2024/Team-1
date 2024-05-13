@@ -2,54 +2,56 @@ import speech_recognition as sr
 import random
 import time
 
-code = ''
-key = ''
+bytes_hex_str = []
+puzzle_bytes = []
+word = ''
 
 
 def generate_code():
     """Generate a code according to the given rules."""
-    first_byte = random.randint(0, 255)  # Generate a random integer between 0 and 255 for the first byte
-    second_byte = random.randint(0, 255)  # Generate a random integer between 0 and 255 for the second byte
-    third_byte = random.randint(0, 255)  # Generate a random integer between 0 and 255 for the third byte
+    byte_key = [] # Ordering: 0 -> sequence, 1 -> wires, 2 -> localization, 3 -> hold
 
-    # Convert integers to binary strings with leading zeros
-    first_byte_binary = format(first_byte, '08b')
-    second_byte_binary = format(second_byte, '08b')
-    third_byte_binary = format(third_byte, '08b')
+    # Generate 4 bytes
+    for _ in range(4):
+        byte_key.append(random.randint(0, 255))
+    bytes_hex_strs = [format(b, '02X') for b in byte_key]
 
-    # Concatenate binary strings to form the code
-    code = first_byte_binary + ' ' + second_byte_binary + ' ' + third_byte_binary
-    return code
+    return byte_key, bytes_hex_strs
 
-def analyze_code():
+def analyze_code(bytes):
     """Analyze the code and determine the output based on the given rules."""
-    # Split the code into individual bytes
-    bytes_list = code.split()
+    binary_bytes = [format(b, '08b') for b in bytes]
 
+    # Split the code into individual bytes
     # Check the conditions and determine the output
-    if bytes_list[0][0] == '1':
+    if binary_bytes[0][0] == '1':
         return "Grape"
-    elif int(bytes_list[1], 2) % 8 == 0:
+    elif int(binary_bytes[1], 2) % 8 == 0:
         return "Banana"
-    elif bytes_list[2][-1] == '0':
+    elif binary_bytes[2][-1] == '0':
         return "Apple"
     else:
         return "Dragonfruit"
     
 def init():
-    global code
-    global key
+    global puzzle_bytes
+    global word
+    global bytes_hex_strs
 
     # Generate the code
-    code = generate_code()
+    puzzle_bytes, bytes_hex_strs = generate_code()
     # Analyze the code and determine the key
-    key = analyze_code()
+    word = analyze_code(puzzle_bytes)
+
+def display_puzzle_hex(app, puzzle):
+    text_node = app.num_texts[int(puzzle)]
+    text_node.setText(bytes_hex_strs[int(puzzle)])
 
 def game_loop(mistakes):
     first_speech = True
     # Main game loop
     while True:
-        print("The bomb shows the following characters:", code)
+        print("The bomb shows the following characters:", puzzle_bytes)
 
         print("Enter 0 to begin speech recognition ('s' to switch puzzles): ")
         x = input()
@@ -77,7 +79,7 @@ def game_loop(mistakes):
                 
                 # Check if the recognized speech matches the key
                 spoken = r.recognize_google(audio)
-                if str(spoken).lower().replace(" ", "") == key.lower():
+                if str(spoken).lower().replace(" ", "") == word.lower():
                     return True
                 else:
                     mistakes[0] += 1

@@ -1,9 +1,9 @@
-import random
 import sys
+
 
 from argparse import ArgumentParser
 
-from puzzles import localization, wires, sequence, speech
+from puzzles import localization, wires, sequence, speech, Puzzle
 from util.color_calibration import calibrate
 
 from direct.showbase.ShowBase import ShowBase
@@ -11,6 +11,7 @@ from direct.task import Task
 from direct.gui.OnscreenImage import OnscreenImage
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
+
 
 class BombApp(ShowBase):
     def __init__(self, no_color_calibration=False):
@@ -53,6 +54,7 @@ class BombApp(ShowBase):
         self.__setup_timer()
         self.__setup_num_displays()
         
+        speech.init()
         sequence.init(self)
         wires.init(self)
 
@@ -119,10 +121,22 @@ class BombApp(ShowBase):
         seq_num_np = self.bomb.find("**/seq.num")
         ss_num_np = self.bomb.find("**/ss.num")
         wire_num_np = self.bomb.find("**/wire.num")
-        self.hold_num_text = setup_num_display(hold_num_np, 'hold', -0.1, -0.1, 0.5, 90, 270, 90)
-        self.seq_num_text = setup_num_display(seq_num_np, 'seq', 0.1, -0.1, -0.5, 0, 90, 180)
-        self.ss_num_text = setup_num_display(ss_num_np, 'ss', 0.1, 0.1, -0.5, 0, 90, 270)
-        self.wire_num_text = setup_num_display(wire_num_np, 'wire', 0.1, -0.1, 0.5, 180, -90, 90)
+
+        seq_num_text = setup_num_display(seq_num_np, 'seq', 0.1, -0.1, -0.5, 0, 90, 180)
+        wire_num_text = setup_num_display(wire_num_np, 'wire', 0.1, -0.1, 0.5, 180, -90, 90)
+        ss_num_text = setup_num_display(ss_num_np, 'ss', 0.1, 0.1, -0.5, 0, 90, 270)
+        hold_num_text = setup_num_display(hold_num_np, 'hold', -0.1, -0.1, 0.5, 90, 270, 90)
+
+        self.num_texts = [seq_num_text, wire_num_text, ss_num_text, hold_num_text]
+
+    def handle_mistake(self):
+        self.mistake_icons[self.mistakes].show()
+        self.mistakes += 1
+        if self.mistakes == 3:
+            sys.exit()
+
+    def solve_puzzle(self, puzzle: Puzzle):
+        speech.display_puzzle_hex(self, puzzle)
 
     def __setup_controls(self):
         self.accept('q', self.rotate_bomb_simon_says)
@@ -174,12 +188,6 @@ class BombApp(ShowBase):
         self.stage_ptr = 0
 
         localization.init(color_calibration)
-
-    def handle_mistake(self):
-        self.mistake_icons[self.mistakes].show()
-        self.mistakes += 1
-        if self.mistakes == 3:
-            sys.exit()
 
     def set_ss_light(self, color_str):
         (ss_sphere_np, sphere_light_np, is_on) = self.ss_state[color_str]
