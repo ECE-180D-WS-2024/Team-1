@@ -53,8 +53,6 @@ def init(app):
     # then putting them in reverse order according to their original position in the manual's row
     key = list(sorted(filter(lambda x: x in randomized_ordering, MANUAL[row_n]), key=lambda x: MANUAL[row_n].index(x), reverse=True))
 
-    print(key)
-
     __render_btn_symbol(app.bomb, (0, 0), randomized_ordering[0])
     __render_btn_symbol(app.bomb, (0, 1), randomized_ordering[1])
     __render_btn_symbol(app.bomb, (1, 0), randomized_ordering[2])

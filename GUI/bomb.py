@@ -54,13 +54,12 @@ class BombApp(ShowBase):
         self.__setup_num_displays()
         
         sequence.init(self)
+        wires.init(self)
 
         if no_color_calibration:
             self.__setup_localization([0,0,0])
         else:
             self.__setup_localization(calibrate())
-
-        self.__setup_wires()
 
         self.__setup_controls()
 
@@ -146,7 +145,7 @@ class BombApp(ShowBase):
         self.accept('l', sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
 
         for i in range(7):
-            self.accept(str(i), self.cut_wire, extraArgs=[i])
+            self.accept(str(i), wires.cut_wire, extraArgs=[self, i])
 
     def __setup_localization(self, color_calibration):
         def setup_light(color_str, color_vec):
@@ -176,42 +175,6 @@ class BombApp(ShowBase):
 
         localization.init(color_calibration)
 
-    def __setup_wires(self):
-        self.wire_cut = [False] * 7
-        self.wire_colors = random.choices(['r', 'g', 'y', 'b', 'w', 'o', 'k'], k=6)
-        self.wire_num = random.randint(1, 9)
-        self.wire_num_text.setText(str(self.wire_num).zfill(2))
-        self.correct_wire = wires.decide_wire_to_cut(self.wire_colors, self.wire_num)
-
-        materials = self.bomb.findAllMaterials('wire.*')
-        material_dict = {
-            'r': materials.findMaterial('wire.red'),
-            'g': materials.findMaterial('wire.green'),
-            'y': materials.findMaterial('wire.yellow'),
-            'b': materials.findMaterial('wire.blue'),
-            'w': materials.findMaterial('wire.white'),
-            'o': materials.findMaterial('wire.orange'),
-            'k': materials.findMaterial('wire.black')
-        }
-
-        for i in range(6):
-            top_np = self.bomb.find(f'**/wire{i}.top')
-            bot_np = self.bomb.find(f'**/wire{i}.bottom')
-
-            wire_color = self.wire_colors[i]
-            material = material_dict[wire_color]
-            top_np.setMaterial(material, 1)
-            bot_np.setMaterial(material, 1)
-
-    def cut_wire(self, wire_idx):
-        if not self.wire_cut[wire_idx]:
-            direction = 1 if random.random() < 0.5 else -1
-            wire_top_np = self.bomb.find(f'**/wire{wire_idx - 1}.top')
-            self.set_wire_hpr(wire_top_np, direction)
-            self.wire_cut[wire_idx] = True
-            if wire_idx != self.correct_wire:
-                self.handle_mistake()
-
     def handle_mistake(self):
         self.mistake_icons[self.mistakes].show()
         self.mistakes += 1
@@ -225,11 +188,6 @@ class BombApp(ShowBase):
         else:
             ss_sphere_np.setLightOff(sphere_light_np)
         self.ss_state[color_str] = (ss_sphere_np, sphere_light_np, not is_on)
-    
-    def set_wire_hpr(self, wire_np, direction):
-            h, p, r = wire_np.getHpr()
-            angle = random.randint(18, 25)
-            wire_np.setHpr(h + direction * angle, p, r)
 
     def press_hold_button(self):
         hold_button = self.bomb.find('**/hold.btn')

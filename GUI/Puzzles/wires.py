@@ -1,12 +1,14 @@
 import random
 
+wire_cut = [False] * 6
 wires = []
-L = -1
+rand_num = -1
+
+correct_wire = -1
 
 COLORS = ['r', 'y', 'b', 'g', 'w', 'o', 'k']  # Example colors: red, yellow, blue, green, white, orange, black
 
-
-def decide_wire_to_cut(wires, L):
+def __get_correct_wire(wires, L):
     # Count the number of each color of wire
     yellow_count = wires.count('y')
     white_count = wires.count('w')
@@ -22,44 +24,45 @@ def decide_wire_to_cut(wires, L):
     else:
         return 4  # Otherwise, cut the fourth wire
     
-
-def init():
-    global wires
-    global L
+def init(app):
+    global wire_cut
+    global correct_wire
+    wires = random.choices(COLORS, k=6)
+    rand_num = random.randint(1, 9)
+    correct_wire = __get_correct_wire(wires, rand_num)
     
-    # Generate a random sequence of 6 wires, add a black wire, and a random number L
-    wires = random.choices(COLORS, k=6)  # Choose 6 wires randomly
-    random.shuffle(wires)  # Shuffle the wires to mix the black wire randomly
-    L = random.randint(1, 9)  # Random number L between 1 and 9
-    
-def game_loop(mistakes):
+    app.wire_num_text.setText(str(rand_num).zfill(2))
 
-    # Main game loop
-    while(True):
-        # Print the wire sequence and color legend
-        print(f"There are 6 wires: {''.join(wires)}")
-        print(f"The bomb shows a number: {L}")
+    materials = app.bomb.findAllMaterials('wire.*')
+    material_dict = {
+        'r': materials.findMaterial('wire.red'),
+        'g': materials.findMaterial('wire.green'),
+        'y': materials.findMaterial('wire.yellow'),
+        'b': materials.findMaterial('wire.blue'),
+        'w': materials.findMaterial('wire.white'),
+        'o': materials.findMaterial('wire.orange'),
+        'k': materials.findMaterial('wire.black')
+    }
 
-        # Prompt the user for input
-        print("Your input to defuse this stage? ('s' to switch puzzles): ")
-        user_choice = input()
+    for i in range(6):
+        top_np = app.bomb.find(f'**/wire{i}.top')
+        bot_np = app.bomb.find(f'**/wire{i}.bottom')
 
-        if user_choice == 's':
-            return False
+        wire_color = wires[i]
+        material = material_dict[wire_color]
+        top_np.setMaterial(material, 1)
+        bot_np.setMaterial(material, 1)
 
-        # Determine the correct wire to cut
-        correct_wire = decide_wire_to_cut(wires, L)
+def __set_wire_hpr(wire_np, direction):
+    h, p, r = wire_np.getHpr()
+    angle = random.randint(18, 25)
+    wire_np.setHpr(h + direction * angle, p, r)
 
-        # Compare user input with correct wire
-        if int(user_choice) == correct_wire:
-            return True
-        else:
-            mistakes[0] += 1
-            print('Wrong, Mistakes: ', mistakes[0])
-            # Check if the player has made too many mistakes
-            if mistakes[0] >= 3:
-                return False
-
-
-def start_wires(mistakes):
-    return game_loop(mistakes)
+def cut_wire(app, wire_idx):
+    if not wire_cut[wire_idx]:
+        direction = 1 if random.random() < 0.5 else -1
+        wire_top_np = app.bomb.find(f'**/wire{wire_idx - 1}.top')
+        __set_wire_hpr(wire_top_np, direction)
+        wire_cut[wire_idx] = True
+        if wire_idx != correct_wire:
+            app.handle_mistake()
