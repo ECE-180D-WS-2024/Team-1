@@ -8,7 +8,6 @@ from util.color_calibration import calibrate
 
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from direct.interval.IntervalGlobal import Sequence
 from direct.gui.OnscreenImage import OnscreenImage
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
@@ -19,8 +18,6 @@ class BombApp(ShowBase):
         # Setup state
         self.secs_remain = 180
         self.timer_light_on = False
-        self.wire_cut = [False] * 7
-        self.ss_state = {}
         self.mistakes = 0
         self.max_mistakes = 3
 
@@ -55,6 +52,9 @@ class BombApp(ShowBase):
         # Setup post-processed components
         self.__setup_timer()
         self.__setup_num_displays()
+        
+        sequence.init(self)
+
         if no_color_calibration:
             self.__setup_localization([0,0,0])
         else:
@@ -129,7 +129,7 @@ class BombApp(ShowBase):
         self.accept('q', self.rotate_bomb_simon_says)
         self.accept('w', self.rotate_bomb_binary)
         self.accept('e', self.rotate_bomb_wires)
-        self.accept('a', self.rotate_bomb_sequence)
+        self.accept('a', sequence.focus, extraArgs=[self.bomb])
         self.accept('s', self.rotate_bomb_timer)
         self.accept('d', self.rotate_bomb_feet)
         self.accept('r', self.set_ss_light, extraArgs=['red'])
@@ -140,10 +140,10 @@ class BombApp(ShowBase):
         self.accept('space-up', self.release_hold_button)
 
         # Magic numbers are from original positions. Data gathered from calling .ls() on node paths
-        self.accept('i', self.press_sequence_button, extraArgs=[(0, 0), (0.200018, 1.04975, 0.193841)])
-        self.accept('o', self.press_sequence_button, extraArgs=[(0, 1), (-0.199982, 1.04975, 0.193841)])
-        self.accept('k', self.press_sequence_button, extraArgs=[(1, 0), (0.200018, 1.04975, -0.206159)])
-        self.accept('l', self.press_sequence_button, extraArgs=[(1, 1), (-0.199982, 1.04975, -0.206159)])
+        self.accept('i', sequence.press_btn, extraArgs=[self, (0, 0), (0.200018, 1.04975, 0.193841)])
+        self.accept('o', sequence.press_btn, extraArgs=[self, (0, 1), (-0.199982, 1.04975, 0.193841)])
+        self.accept('k', sequence.press_btn, extraArgs=[self, (1, 0), (0.200018, 1.04975, -0.206159)])
+        self.accept('l', sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
 
         for i in range(7):
             self.accept(str(i), self.cut_wire, extraArgs=[i])
@@ -164,14 +164,20 @@ class BombApp(ShowBase):
         ss_blue_nps = setup_light('blue', (0, 0, 255, 0))
         ss_yellow_nps = setup_light('yellow', (255, 255, 0, 0))
 
+        self.ss_state = {}
         self.ss_state['red'] = (*ss_red_nps, False)
         self.ss_state['green'] = (*ss_green_nps, False)
         self.ss_state['blue'] = (*ss_blue_nps, False)
         self.ss_state['yellow'] = (*ss_yellow_nps, False)
 
+        self.ss_stages = localization.generate_stages()
+        self.ss_key = localization.generate_key(self.ss_stages)
+        self.stage_ptr = 0
+
         localization.init(color_calibration)
 
     def __setup_wires(self):
+        self.wire_cut = [False] * 7
         self.wire_colors = random.choices(['r', 'g', 'y', 'b', 'w', 'o', 'k'], k=6)
         self.wire_num = random.randint(1, 9)
         self.wire_num_text.setText(str(self.wire_num).zfill(2))
@@ -219,14 +225,7 @@ class BombApp(ShowBase):
         else:
             ss_sphere_np.setLightOff(sphere_light_np)
         self.ss_state[color_str] = (ss_sphere_np, sphere_light_np, not is_on)
-
-    def press_sequence_button(self, btn_coord, initial_pos):
-        i, j = btn_coord
-        x, y, z = initial_pos
-        btn = self.bomb.find(f'**/seq.btn{i}{j}')
-        seq = Sequence(btn.posInterval(0.2, (x, y - 0.1, z)), btn.posInterval(0.2, (x, y, z)))
-        seq.start()
-
+    
     def set_wire_hpr(self, wire_np, direction):
             h, p, r = wire_np.getHpr()
             angle = random.randint(18, 25)
@@ -259,10 +258,6 @@ class BombApp(ShowBase):
 
     def rotate_bomb_binary(self):
         self.bomb.hprInterval(0.25, (0, 0, 0)).start()
-        pass
-
-    def rotate_bomb_sequence(self):
-        self.bomb.hprInterval(0.25, (180, 0, 0)).start()
         pass
 
     def blink_colon(self, task: Task):

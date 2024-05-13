@@ -9,7 +9,7 @@ MARGIN_V = 12
 
 STAGE_COUNT = 4
 COLORS = ['r','g','y','b']
-COLOR_REPEAT_TABLE = {
+COLOR_REPEAT_CORNER_CONVERSION_TABLE = {
     'r': {1: 4, 2: 4, 3: 2},
     'g': {1: 2, 2: 4, 3: 2},
     'y': {1: 1, 2: 1, 3: 3},
@@ -24,17 +24,17 @@ upper_limit = np.array([])
 def generate_stages():
     """Generate a sequence of colors (stages) for the game."""
     stages_local = []
-    for i in range(STAGE_COUNT):
+    for _ in range(STAGE_COUNT):
         l_color = [COLORS[random.randint(0, 3)]] * random.randint(1, 3) # Random color, random repeats
         s_color = ''.join(l_color)
         stages_local.append(s_color)
     return stages_local
 
-def generate_key():
+def generate_key(stages):
     """Generate the solution key based on the stages."""
     answer_key_local = []
     for pattern in stages:
-        answer_key_local.append(COLOR_REPEAT_TABLE[pattern[0]][len(pattern)])
+        answer_key_local.append(COLOR_REPEAT_CORNER_CONVERSION_TABLE[pattern[0]][len(pattern)])
     return answer_key_local
 
 def init(color):
@@ -45,7 +45,7 @@ def init(color):
 
     # Generate game stages and solution key
     stages = generate_stages()
-    answer_key = generate_key()
+    answer_key = generate_key(stages)
     lower_limit = np.array([color[0] - MARGIN_H, color[1] - MARGIN_S, color[2] - MARGIN_V])
     upper_limit = np.array([color[0] + MARGIN_H, color[1] + MARGIN_S, color[2] + MARGIN_V])
 
