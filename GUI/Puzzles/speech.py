@@ -2,6 +2,7 @@ import speech_recognition as sr
 import random
 import time
 
+recognizer = None
 bytes_hex_str = []
 puzzle_bytes = []
 word = ''
@@ -34,9 +35,14 @@ def analyze_code(bytes):
         return "Dragonfruit"
     
 def init():
+    global recognizer
     global puzzle_bytes
     global word
     global bytes_hex_strs
+
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
 
     # Generate the code
     puzzle_bytes, bytes_hex_strs = generate_code()
@@ -48,7 +54,6 @@ def display_puzzle_hex(app, puzzle):
     text_node.setText(bytes_hex_strs[int(puzzle)])
 
 def game_loop(mistakes):
-    first_speech = True
     # Main game loop
     while True:
         print("The bomb shows the following characters:", puzzle_bytes)
@@ -63,22 +68,16 @@ def game_loop(mistakes):
             break
         else:
             # Initialize the recognizer
-            r = sr.Recognizer()
             # Use the default microphone as the audio source
-            with sr.Microphone() as source:       
-                r.adjust_for_ambient_noise(source)    
-                if first_speech:
-                    time.sleep(0.5)
-                    first_speech = False
-                print("Begin Speaking:")     
-                audio = r.listen(source)                   # listen for the first phrase and extract it into audio data
+            with sr.Microphone() as source:
+                audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
 
             try:
                 # Recognize speech using Google Speech Recognition
                 # print("You said " + r.recognize_google(audio))    
                 
                 # Check if the recognized speech matches the key
-                spoken = r.recognize_google(audio)
+                spoken = recognizer.recognize_google(audio)
                 if str(spoken).lower().replace(" ", "") == word.lower():
                     return True
                 else:

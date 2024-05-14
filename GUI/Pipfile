@@ -11,6 +11,7 @@ speechrecognition = "==3.10.1"
 panda3d = "==1.10.14"
 types-panda3d = "*"
 panda3d-blend2bam = "*"
+pyaudio = "*"
 
 [dev-packages]
 

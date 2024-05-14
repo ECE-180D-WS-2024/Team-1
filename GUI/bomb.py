@@ -59,9 +59,11 @@ class BombApp(ShowBase):
         wires.init(self)
 
         if no_color_calibration:
-            self.__setup_localization([0,0,0])
+            localization.init(self, [0,0,0])            
         else:
-            self.__setup_localization(calibrate())
+            localization.init(self, calibrate())
+
+        print(localization.solved)
 
         self.__setup_controls()
 
@@ -139,16 +141,12 @@ class BombApp(ShowBase):
         speech.display_puzzle_hex(self, puzzle)
 
     def __setup_controls(self):
-        self.accept('q', self.rotate_bomb_simon_says)
+        self.accept('q', localization.focus, extraArgs=[self])
         self.accept('w', self.rotate_bomb_binary)
-        self.accept('e', wires.focus, extraArgs=[self.bomb])
-        self.accept('a', sequence.focus, extraArgs=[self.bomb])
+        self.accept('e', wires.focus, extraArgs=[self])
+        self.accept('a', sequence.focus, extraArgs=[self])
         self.accept('s', self.rotate_bomb_timer)
         self.accept('d', self.rotate_bomb_feet)
-        self.accept('r', self.set_ss_light, extraArgs=['red'])
-        self.accept('g', self.set_ss_light, extraArgs=['green'])
-        self.accept('y', self.set_ss_light, extraArgs=['yellow'])
-        self.accept('b', self.set_ss_light, extraArgs=['blue'])
         self.accept('space', self.press_hold_button)
         self.accept('space-up', self.release_hold_button)
 
@@ -160,42 +158,6 @@ class BombApp(ShowBase):
 
         for i in range(7):
             self.accept(str(i), wires.cut_wire, extraArgs=[self, i])
-
-    def __setup_localization(self, color_calibration):
-        def setup_light(color_str, color_vec):
-            ss_sphere_np = self.bomb.find(f"**/ss.{color_str}")
-            sphere_light_node = PointLight(f"ss.{color_str}_light")
-            sphere_light_node.setColor(color_vec)
-
-            sphere_light_np = ss_sphere_np.attachNewNode(sphere_light_node)
-            sphere_light_np.setPos(0, 0, 0.5)
-
-            return (ss_sphere_np, sphere_light_np)
-
-        ss_red_nps = setup_light('red', (255, 0, 0, 0))
-        ss_green_nps = setup_light('green', (0, 255, 0, 0))
-        ss_blue_nps = setup_light('blue', (0, 0, 255, 0))
-        ss_yellow_nps = setup_light('yellow', (255, 255, 0, 0))
-
-        self.ss_state = {}
-        self.ss_state['red'] = (*ss_red_nps, False)
-        self.ss_state['green'] = (*ss_green_nps, False)
-        self.ss_state['blue'] = (*ss_blue_nps, False)
-        self.ss_state['yellow'] = (*ss_yellow_nps, False)
-
-        self.ss_stages = localization.generate_stages()
-        self.ss_key = localization.generate_key(self.ss_stages)
-        self.stage_ptr = 0
-
-        localization.init(color_calibration)
-
-    def set_ss_light(self, color_str):
-        (ss_sphere_np, sphere_light_np, is_on) = self.ss_state[color_str]
-        if not is_on:
-            ss_sphere_np.setLight(sphere_light_np)
-        else:
-            ss_sphere_np.setLightOff(sphere_light_np)
-        self.ss_state[color_str] = (ss_sphere_np, sphere_light_np, not is_on)
 
     def press_hold_button(self):
         hold_button = self.bomb.find('**/hold.btn')
@@ -212,10 +174,6 @@ class BombApp(ShowBase):
 
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
-        pass
-
-    def rotate_bomb_simon_says(self):
-        self.bomb.hprInterval(0.25, (90, 0, 0)).start()
         pass
 
     def rotate_bomb_binary(self):
