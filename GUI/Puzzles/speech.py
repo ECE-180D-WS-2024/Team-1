@@ -58,40 +58,33 @@ def game_loop(mistakes):
     while True:
         print("The bomb shows the following characters:", puzzle_bytes)
 
-        print("Enter 0 to begin speech recognition ('s' to switch puzzles): ")
-        x = input()
+        print("Press the speech button to begin speech recognition (skip button to switch puzzles): ")
+        
+        # Initialize the recognizer
+        # Use the default microphone as the audio source
+        with sr.Microphone() as source:
+            audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
 
-        if x == 's':
-            return False
-
-        if int(x)!=0:
-            break
-        else:
-            # Initialize the recognizer
-            # Use the default microphone as the audio source
-            with sr.Microphone() as source:
-                audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
-
-            try:
-                # Recognize speech using Google Speech Recognition
-                # print("You said " + r.recognize_google(audio))    
-                
-                # Check if the recognized speech matches the key
-                spoken = recognizer.recognize_google(audio)
-                if str(spoken).lower().replace(" ", "") == word.lower():
-                    return True
-                else:
-                    mistakes[0] += 1
-                    print('Wrong, Mistakes: ', mistakes[0])
-                    # Check if the player has made too many mistakes
-                    if mistakes[0] >= 3:
-                        return False
+        try:
+            # Recognize speech using Google Speech Recognition
+            # print("You said " + r.recognize_google(audio))    
             
-            except Exception as e:                            
-                # Speech is unintelligible
-                print(e)
-                print("Could not understand audio, please retry.")
+            # Check if the recognized speech matches the key
+            spoken = recognizer.recognize_google(audio)
+            if str(spoken).lower().replace(" ", "") == word.lower():
+                return True
+            else:
+                mistakes[0] += 1
+                print('Wrong, Mistakes: ', mistakes[0])
+                # Check if the player has made too many mistakes
+                if mistakes[0] >= 3:
+                    return False
+        
+        except Exception as e:                            
+            # Speech is unintelligible
+            print(e)
+            print("Could not understand audio, please retry.")
 
 
-def start_speech(mistakes):
-    return game_loop(mistakes)
+def start_speech(mistakes, **kwargs):
+    return game_loop(mistakes, **kwargs)
