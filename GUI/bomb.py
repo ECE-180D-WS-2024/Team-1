@@ -26,6 +26,7 @@ class BombApp(ShowBase):
         self.mistakes_lock = Condition()
         self.mistakes = 0
         self.max_mistakes = 3
+        self.solved_puzzles = set()
 
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
@@ -145,6 +146,15 @@ class BombApp(ShowBase):
     def solve_puzzle(self, puzzle: Puzzle):
         if puzzle != Puzzle.SPEECH:
             speech.display_puzzle_hex(self, puzzle)
+        self.solved_puzzles.add(puzzle)
+
+        if len(self.solved_puzzles) == 5:
+            self.task_blink_colon.remove()
+            self.task_decr_time.remove()
+            self.task_blink_timer_light.remove()
+    
+    def is_solved(self, puzzle: Puzzle):
+        return puzzle in self.solved_puzzles
 
     def __setup_controls(self):
         self.accept('q', localization.focus, extraArgs=[self])

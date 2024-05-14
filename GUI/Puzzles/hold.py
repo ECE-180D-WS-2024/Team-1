@@ -21,9 +21,6 @@ def check_answer(time, color, freq):
     lastDig = time % 10
     tensDig = ((time // 10)  % 6) % 10
     minsDig = time // 60
-    print(lastDig)
-    print(tensDig)
-    print(minsDig)
     if (color == 5):
         if (lastDig % 5 == 0):
             return True
@@ -127,8 +124,9 @@ def release_button(app):
         light_np = app.bomb.find('**/hold.light')
         light_np.setTexture(default_tex)
 
-    correct = check_answer(app.secs_remain, color_num, freq)
-    if correct:
-        app.solve_puzzle(Puzzle.HOLD)
-    else:
-        app.handle_mistake()
+    if not app.is_solved(Puzzle.HOLD):
+        correct = check_answer(app.secs_remain, color_num, freq)
+        if correct:
+            app.solve_puzzle(Puzzle.HOLD)
+        else:
+            app.handle_mistake()

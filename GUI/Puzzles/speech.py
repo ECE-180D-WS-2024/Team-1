@@ -63,7 +63,8 @@ def focus(app):
     app.bomb.hprInterval(0.25, (0, 0, 0)).start()
     app.focused = Puzzle.SPEECH
     
-    app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
+    if app.is_solved(Puzzle.HOLD) and app.is_solved(Puzzle.LOCALIZATION) and app.is_solved(Puzzle.SEQUENCE) and app.is_solved(Puzzle.WIRES):
+        app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
 
 def __task_process_speech(app, task):
     if app.focused != Puzzle.SPEECH:

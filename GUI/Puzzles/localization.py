@@ -29,7 +29,6 @@ answer_key = []
 curr_sequence = None
 lower_limit = np.array([])
 upper_limit = np.array([])
-solved = False
 
 def generate_stages():
     """Generate a sequence of colors (stages) for the game."""
@@ -55,7 +54,6 @@ def init(app, color):
     global lower_limit
     global upper_limit
     global np_state
-    global solved
 
     def setup_light(color_str, color_vec):
         ss_sphere_np = app.bomb.find(f"**/ss.{color_str}")
@@ -82,7 +80,6 @@ def init(app, color):
     stages = generate_stages()
     curr_stage = 0
     answer_key = generate_key(stages)
-    solved = False
 
     lower_limit = np.array([color[0] - MARGIN_H, color[1] - MARGIN_S, color[2] - MARGIN_V])
     upper_limit = np.array([color[0] + MARGIN_H, color[1] + MARGIN_S, color[2] + MARGIN_V])
@@ -122,12 +119,10 @@ def __end_of_stage(user_answers):
     return len(user_answers) == curr_stage + 1
 
 def focus(app):
-    global solved
-
     app.bomb.hprInterval(0.25, (90, 0, 0)).start()
     app.focused = Puzzle.LOCALIZATION
 
-    if not solved:
+    if not app.is_solved(Puzzle.LOCALIZATION):
         # Initialize game variables
         # Set up video capture
         cap = cv2.VideoCapture(0)  # Start video capture
@@ -179,7 +174,6 @@ def task_process_cv_frame(task_state, task: Task):
         cap.release()
         return task.done
 
-    global solved
     global curr_stage
     global curr_sequence
 
@@ -260,7 +254,6 @@ def task_process_cv_frame(task_state, task: Task):
                     # Check if the game will be completed
                     if curr_stage + 1 == STAGE_COUNT:
                         curr_sequence.finish()
-                        solved = True
                         app.solve_puzzle(Puzzle.LOCALIZATION)
                     else:
                         next_stage_sequence = __generate_stage_sequence(curr_stage + 1)
@@ -276,7 +269,7 @@ def task_process_cv_frame(task_state, task: Task):
 
     cv2.imshow("image", image)
 
-    if not solved:
+    if not app.is_solved(Puzzle.LOCALIZATION):
         return task.again
     else:
         cv2.destroyAllWindows()
