@@ -1,3 +1,4 @@
+import random
 
 def check_answer(time, color, freq):
     lastDig = time % 10
@@ -52,25 +53,16 @@ def check_answer(time, color, freq):
         else:
             return False
 
-def decide_wire_to_cut(wires, L):
-    # Count the number of each color of wire
-    yellow_count = wires.count('y')
-    white_count = wires.count('w')
-    red_count = wires.count('r')
+def init(app):
+    global color
+    global freq
 
-    # Decision logic to determine which wire to cut based on the given conditions
-    if yellow_count == 0 and L % 2 != 0:
-        return 3  # Cut the third wire
-    elif yellow_count == 1 and white_count > 1:
-        return 4  # Cut the fourth wire
-    elif red_count == 0:
-        return 6  # Cut the last wire
-    else:
-        return 4  # Otherwise, cut the fourth wire
-    
+    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
+    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
 
-def init():
-    pass
+    light_np = app.bomb.find("**/hold.light")
+    tex = app.loader.loadTexture("assets/texture/hold_yellow.png")
+    light_np.setTexture(tex)
     
 def game_loop(mistakes, **kwargs):
     last_choice = 0
