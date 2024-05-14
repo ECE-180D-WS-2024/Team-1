@@ -1,6 +1,6 @@
 import speech_recognition as sr
 import random
-import time
+from puzzles import Puzzle
 
 recognizer = None
 bytes_hex_str = []
@@ -34,12 +34,16 @@ def analyze_code(bytes):
     else:
         return "Dragonfruit"
     
-def init():
+def init(app):
     global recognizer
     global puzzle_bytes
     global word
     global bytes_hex_strs
 
+    # Create task chain to allow speech recognition 
+    # to run on a thread separate from the rendering thread
+    app.taskMgr.setupTaskChain("speech_chain", numThreads=1)
+    
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
@@ -53,38 +57,41 @@ def display_puzzle_hex(app, puzzle):
     text_node = app.num_texts[int(puzzle)]
     text_node.setText(bytes_hex_strs[int(puzzle)])
 
-def game_loop(mistakes):
-    # Main game loop
-    while True:
-        print("The bomb shows the following characters:", puzzle_bytes)
+def focus(app):
+    app.bomb.hprInterval(0.25, (0, 0, 0)).start()
+    app.focused = Puzzle.SPEECH
+    
+    app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
 
-        print("Press the speech button to begin speech recognition (skip button to switch puzzles): ")
+def __task_process_speech(app, task):
+    if app.focused != Puzzle.SPEECH:
+        return task.done
+    # Initialize the recognizer
+    # Use the default microphone as the audio source
+    with sr.Microphone() as source:
+        print("listening")
+        audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
+    try:
+        print("done listening")
+        # Recognize speech using Google Speech Recognition
+        # print("You said " + r.recognize_google(audio))    
         
-        # Initialize the recognizer
-        # Use the default microphone as the audio source
-        with sr.Microphone() as source:
-            audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
-
-        try:
-            # Recognize speech using Google Speech Recognition
-            # print("You said " + r.recognize_google(audio))    
-            
-            # Check if the recognized speech matches the key
-            spoken = recognizer.recognize_google(audio)
-            if str(spoken).lower().replace(" ", "") == word.lower():
-                return True
+        # Check if the recognized speech matches the key
+        spoken = recognizer.recognize_google(audio)
+        print(f'heard: {spoken}')
+        if str(spoken).lower().replace(" ", "") == word.lower():
+            app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
+            return task.done
+        else:
+            app.taskMgr.add(app.handle_mistake, extraArgs=[])
+            # Use condition lock to wait for main thread to increment mistake counter
+            app.mistakes_lock.wait()
+            if app.mistakes < 3:
+                return task.again
             else:
-                mistakes[0] += 1
-                print('Wrong, Mistakes: ', mistakes[0])
-                # Check if the player has made too many mistakes
-                if mistakes[0] >= 3:
-                    return False
-        
-        except Exception as e:                            
-            # Speech is unintelligible
-            print(e)
-            print("Could not understand audio, please retry.")
-
-
-def start_speech(mistakes, **kwargs):
-    return game_loop(mistakes, **kwargs)
+                return task.done
+    
+    except Exception as e:                            
+        # Speech is unintelligible
+        print("done listening")
+        return task.again

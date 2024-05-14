@@ -9,7 +9,7 @@ from util.color_calibration import calibrate
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from direct.gui.OnscreenImage import OnscreenImage
-from direct.interval.IntervalGlobal import Sequence, Func, Wait
+from direct.stdpy.threading import Condition
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
@@ -20,6 +20,8 @@ class BombApp(ShowBase):
         # Setup state
         self.secs_remain = 180
         self.timer_light_on = False
+        # Create a mutex for mistakes variable for compatibility with speech's multithreaded nature
+        self.mistakes_lock = Condition()
         self.mistakes = 0
         self.max_mistakes = 3
 
@@ -55,7 +57,7 @@ class BombApp(ShowBase):
         self.__setup_timer()
         self.__setup_num_displays()
         
-        speech.init()
+        speech.init(self)
         sequence.init(self)
         wires.init(self)
 
@@ -63,8 +65,6 @@ class BombApp(ShowBase):
             localization.init(self, [0,0,0])            
         else:
             localization.init(self, calibrate())
-
-        print(localization.solved)
 
         self.__setup_controls()
 
@@ -135,6 +135,7 @@ class BombApp(ShowBase):
     def handle_mistake(self):
         self.mistake_icons[self.mistakes].show()
         self.mistakes += 1
+        self.mistakes_lock.notify_all()
         if self.mistakes == 3:
             sys.exit()
 
@@ -143,7 +144,7 @@ class BombApp(ShowBase):
 
     def __setup_controls(self):
         self.accept('q', localization.focus, extraArgs=[self])
-        self.accept('w', self.rotate_bomb_binary)
+        self.accept('w', speech.focus, extraArgs=[self])
         self.accept('e', wires.focus, extraArgs=[self])
         self.accept('a', sequence.focus, extraArgs=[self])
         self.accept('s', self.rotate_bomb_timer)
@@ -177,11 +178,6 @@ class BombApp(ShowBase):
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
         self.focused = Puzzle.HOLD
-        pass
-
-    def rotate_bomb_binary(self):
-        self.bomb.hprInterval(0.25, (0, 0, 0)).start()
-        self.focused = Puzzle.SPEECH
         pass
 
     def blink_colon(self, task: Task):
