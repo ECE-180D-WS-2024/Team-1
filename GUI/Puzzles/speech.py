@@ -69,7 +69,7 @@ def __task_process_speech(app, task):
     # Initialize the recognizer
     # Use the default microphone as the audio source
     with sr.Microphone() as source:
-        audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
+        audio = recognizer.listen(source, timeout=3)                   
     try:
         # Recognize speech using Google Speech Recognition
         # print("You said " + r.recognize_google(audio))    
