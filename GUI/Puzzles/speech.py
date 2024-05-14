@@ -69,16 +69,13 @@ def __task_process_speech(app, task):
     # Initialize the recognizer
     # Use the default microphone as the audio source
     with sr.Microphone() as source:
-        print("listening")
         audio = recognizer.listen(source)                   # listen for the first phrase and extract it into audio data
     try:
-        print("done listening")
         # Recognize speech using Google Speech Recognition
         # print("You said " + r.recognize_google(audio))    
         
         # Check if the recognized speech matches the key
         spoken = recognizer.recognize_google(audio)
-        print(f'heard: {spoken}')
         if str(spoken).lower().replace(" ", "") == word.lower():
             app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
             return task.done
@@ -93,5 +90,4 @@ def __task_process_speech(app, task):
     
     except Exception as e:                            
         # Speech is unintelligible
-        print("done listening")
         return task.again
