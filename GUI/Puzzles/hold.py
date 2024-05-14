@@ -104,6 +104,10 @@ def init(app):
                 Wait(0.25)
             )
 
+def focus(app):
+    app.bomb.hprInterval(0.25, (0, 90, 0)).start()
+    app.focused = Puzzle.HOLD
+
 def push_button(app):
     hold_button = app.bomb.find('**/hold.btn')
     # Magic numbers are from button_np.ls(); they're the original position

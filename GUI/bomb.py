@@ -31,8 +31,12 @@ class BombApp(ShowBase):
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
 
-        self.font_ssd = self.loader.loadFont("assets/font/seven_segment.ttf")
+        self.font_ssd = self.loader.loadFont("assets/font/dseg7.ttf")
         self.font_ssd.setPixelsPerUnit(60)
+
+        # fourteen segment display font
+        self.font_ftsg = self.loader.loadFont("assets/font/dseg14.ttf")
+        self.font_ftsg.setPixelsPerUnit(60)
 
         self.mistake_icons = []
         for i in range(self.max_mistakes):
@@ -106,9 +110,9 @@ class BombApp(ShowBase):
     def __setup_num_displays(self):
         def setup_num_display(disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
             disp_text_bg_node = TextNode(f'{puzzle_name}.disp_bg')
-            disp_text_bg_node.setText("88")
+            disp_text_bg_node.setText("~~")
             disp_text_bg_node.setTextColor(255, 255, 255, 0.2)
-            disp_text_bg_node.setFont(self.font_ssd)
+            disp_text_bg_node.setFont(self.font_ftsg)
             disp_text_bg_np = disp_np.attach_new_node(disp_text_bg_node)
             disp_text_bg_np.setPos(posX, posY, posZ)
             disp_text_bg_np.setHpr(h, p, r)
@@ -116,7 +120,7 @@ class BombApp(ShowBase):
 
             disp_text_node = TextNode(f'{puzzle_name}.disp')
             disp_text_node.setTextColor(255, 255, 255, 1)
-            disp_text_node.setFont(self.font_ssd)
+            disp_text_node.setFont(self.font_ftsg)
             disp_text_np = disp_np.attach_new_node(disp_text_node)
             disp_text_np.setPos(posX, posY, posZ + 0.1)
             disp_text_np.setHpr(h, p, r)
@@ -161,7 +165,7 @@ class BombApp(ShowBase):
         self.accept('w', speech.focus, extraArgs=[self])
         self.accept('e', wires.focus, extraArgs=[self])
         self.accept('a', sequence.focus, extraArgs=[self])
-        self.accept('s', self.rotate_bomb_timer)
+        self.accept('s', hold.focus, extraArgs=[self])
         self.accept('d', self.rotate_bomb_feet)
         self.accept('space', hold.push_button, extraArgs=[self])
         self.accept('space-up', hold.release_button, extraArgs=[self])
@@ -175,14 +179,9 @@ class BombApp(ShowBase):
         for i in range(7):
             self.accept(str(i), wires.cut_wire, extraArgs=[self, i])
 
-    def rotate_bomb_timer(self):
-        self.bomb.hprInterval(0.25, (0, 90, 0)).start()
-        self.focused = Puzzle.HOLD
-        pass
-
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
-        self.focused = Puzzle.HOLD
+        self.focused = None
         pass
 
     def blink_colon(self, task: Task):
