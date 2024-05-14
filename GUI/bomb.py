@@ -140,7 +140,8 @@ class BombApp(ShowBase):
             sys.exit()
 
     def solve_puzzle(self, puzzle: Puzzle):
-        speech.display_puzzle_hex(self, puzzle)
+        if puzzle != Puzzle.SPEECH:
+            speech.display_puzzle_hex(self, puzzle)
 
     def __setup_controls(self):
         self.accept('q', localization.focus, extraArgs=[self])
