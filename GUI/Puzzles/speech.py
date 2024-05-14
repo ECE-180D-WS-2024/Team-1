@@ -45,8 +45,10 @@ def init(app):
     app.taskMgr.setupTaskChain("speech_chain", numThreads=1)
     
     recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source)
+
+    if not app.args.no_noise_calibration:
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source)
 
     # Generate the code
     puzzle_bytes, bytes_hex_strs = generate_code()

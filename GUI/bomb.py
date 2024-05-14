@@ -1,9 +1,8 @@
 import sys
 
+from argparse import ArgumentParser, Namespace
 
-from argparse import ArgumentParser
-
-from puzzles import localization, wires, sequence, speech, Puzzle
+from puzzles import localization, wires, sequence, speech, hold, Puzzle
 from util.color_calibration import calibrate
 
 from direct.showbase.ShowBase import ShowBase
@@ -15,9 +14,12 @@ from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
 
 class BombApp(ShowBase):
-    def __init__(self, no_color_calibration=False):
+    def __init__(self, args: Namespace):
         ShowBase.__init__(self)
-        # Setup state
+        """
+          Setup state
+        """
+        self.args = args
         self.secs_remain = 180
         self.timer_light_on = False
         # Create a mutex for mistakes variable for compatibility with speech's multithreaded nature
@@ -60,8 +62,9 @@ class BombApp(ShowBase):
         speech.init(self)
         sequence.init(self)
         wires.init(self)
+        hold.init(self)
 
-        if no_color_calibration:
+        if args.no_color_calibration:
             localization.init(self, [0,0,0])            
         else:
             localization.init(self, calibrate())
@@ -211,9 +214,10 @@ class BombApp(ShowBase):
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")
     parser.add_argument('--no-color-calibration', action='store_true')
+    parser.add_argument('--no-noise-calibration', action='store_true')
     args = parser.parse_args()
 
-    app = BombApp(no_color_calibration=args.no_color_calibration)
+    app = BombApp(args=args)
     app.run()
 
 if __name__ == '__main__':
