@@ -9,6 +9,7 @@ from util.color_calibration import calibrate
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from direct.gui.OnscreenImage import OnscreenImage
+from direct.interval.IntervalGlobal import Sequence, Func, Wait
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
@@ -170,14 +171,17 @@ class BombApp(ShowBase):
 
     def rotate_bomb_timer(self):
         self.bomb.hprInterval(0.25, (0, 90, 0)).start()
+        self.focused = Puzzle.HOLD
         pass
 
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
+        self.focused = Puzzle.HOLD
         pass
 
     def rotate_bomb_binary(self):
         self.bomb.hprInterval(0.25, (0, 0, 0)).start()
+        self.focused = Puzzle.SPEECH
         pass
 
     def blink_colon(self, task: Task):
