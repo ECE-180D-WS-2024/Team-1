@@ -153,8 +153,8 @@ class BombApp(ShowBase):
         self.accept('a', sequence.focus, extraArgs=[self])
         self.accept('s', self.rotate_bomb_timer)
         self.accept('d', self.rotate_bomb_feet)
-        self.accept('space', self.press_hold_button)
-        self.accept('space-up', self.release_hold_button)
+        self.accept('space', hold.push_button, extraArgs=[self])
+        self.accept('space-up', hold.release_button, extraArgs=[self])
 
         # Magic numbers are from original positions. Data gathered from calling .ls() on node paths
         self.accept('i', sequence.press_btn, extraArgs=[self, (0, 0), (0.200018, 1.04975, 0.193841)])
@@ -164,15 +164,6 @@ class BombApp(ShowBase):
 
         for i in range(7):
             self.accept(str(i), wires.cut_wire, extraArgs=[self, i])
-
-    def press_hold_button(self):
-        hold_button = self.bomb.find('**/hold.btn')
-        hold_button.posInterval(0.25, (0.011577, -0.463809, 0.506159)).start()
-
-    def release_hold_button(self):
-        hold_button = self.bomb.find('**/hold.btn')
-        # Magic numbers are from button_np.ls(); they're the original position
-        hold_button.posInterval(0.25, (0.011577, -0.463809, 0.606159)).start()
 
     def rotate_bomb_timer(self):
         self.bomb.hprInterval(0.25, (0, 90, 0)).start()

@@ -1,5 +1,22 @@
 import random
 
+from puzzles import Puzzle
+
+from direct.interval.IntervalGlobal import Sequence, Wait, Func
+
+COLOR_MAP = {
+    0: 'red',
+    1: 'green',
+    2: 'blue',
+    3: 'yellow',
+    4: 'purple',
+    5: 'white'
+}
+
+light_sequence = None
+default_tex = None
+color_tex = None
+
 def check_answer(time, color, freq):
     lastDig = time % 10
     tensDig = ((time // 10)  % 6) % 10
@@ -54,51 +71,64 @@ def check_answer(time, color, freq):
             return False
 
 def init(app):
-    global color
+    global light_sequence
+    global default_tex
+    global color_tex
+    global color_num
     global freq
 
-    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
+    color_num = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
     freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
 
     light_np = app.bomb.find("**/hold.light")
-    tex = app.loader.loadTexture("assets/texture/hold_yellow.png")
-    light_np.setTexture(tex)
-    
-def game_loop(mistakes, **kwargs):
-    last_choice = 0
-    # Main game loop
-    while(True):
+    default_tex = app.loader.loadTexture("assets/texture/hold_black.png")
+    light_np.setTexture(default_tex)
 
-        #Check if time ran out
-        if (kwargs['time'].value == 0):
-            return False
-        
-        # Prompt the user to press the rgb
-        print("Press the RGB button down and don't let go!")
-        print("Note it's color and rate of flashing")
+    color_tex_path = f'assets/texture/hold_{COLOR_MAP[color_num]}.png'
+    color_tex = app.loader.loadTexture(color_tex_path)
 
-        # Wait for button press
-        while(kwargs['rgb'].value == 0):
-            if kwargs['time'].value == 0:
-                return False
+    match freq:
+        case 0:
+            # Use None as a sentinal value for button handler; if none, button handler
+            # should only set the texture instead of looping the sequence
+            light_sequence = None
+        case 1:
+            light_sequence = Sequence(
+                Func(light_np.setTexture, color_tex),
+                Wait(0.75),
+                Func(light_np.setTexture, default_tex),
+                Wait(0.75)
+            )
+        case 2:
+            light_sequence = Sequence(
+                Func(light_np.setTexture, color_tex),
+                Wait(0.25),
+                Func(light_np.setTexture, default_tex),
+                Wait(0.25)
+            )
 
-        while(kwargs['rgb'].value == 1):
-            if kwargs['time'].value == 0:
-                return False
-        
-        # Check if correct release time
-        result = check_answer(kwargs['time'].value, kwargs['rgb_color'], kwargs['rgb_freq'])
+def push_button(app):
+    hold_button = app.bomb.find('**/hold.btn')
+    # Magic numbers are from button_np.ls(); they're the original position
+    hold_button.posInterval(0.25, (0.011577, -0.463809, 0.506159)).start()
+    if light_sequence is not None:
+        light_sequence.loop()
+    else:
+        light_np = app.bomb.find('**/hold.light')
+        light_np.setTexture(color_tex)
 
-        # Check result
-        if result:
-            return True
-        else:
-            mistakes[0] += 3
-            print('Wrong, EXPLODDDINGGGGGGGG')
-            # Check if the player has made too many mistakes
-            if mistakes[0] >= 3:
-                return False
+def release_button(app):
+    hold_button = app.bomb.find('**/hold.btn')
+    # Magic numbers are from button_np.ls(); they're the original position
+    hold_button.posInterval(0.25, (0.011577, -0.463809, 0.606159)).start()
+    if light_sequence is not None:
+        light_sequence.finish()
+    else:
+        light_np = app.bomb.find('**/hold.light')
+        light_np.setTexture(default_tex)
 
-
-def start_rgb_clock(mistakes, **kwargs):
-    return game_loop(mistakes, **kwargs)
+    correct = check_answer(app.secs_remain, color_num, freq)
+    if correct:
+        app.solve_puzzle(Puzzle.HOLD)
+    else:
+        app.handle_mistake()
