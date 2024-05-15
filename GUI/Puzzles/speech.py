@@ -1,12 +1,19 @@
+from enum import Enum, auto
+
 import speech_recognition as sr
 import random
 from puzzles import Puzzle
+
+from panda3d.core import PointLight
 
 recognizer = None
 bytes_hex_str = []
 puzzle_bytes = []
 word = ''
 
+class Status(Enum):
+    LISTENING = auto()
+    IDLE = auto()
 
 def generate_code():
     """Generate a code according to the given rules."""
@@ -39,6 +46,24 @@ def init(app):
     global puzzle_bytes
     global word
     global bytes_hex_strs
+    global status_nps
+
+    def setup_light(color_str, color_vec):
+        status_np = app.bomb.find(f"**/speech.status_{color_str}")
+        sphere_light_node = PointLight(f"speech.{color_str}_light")
+        sphere_light_node.setColor(color_vec)
+
+        sphere_light_np = status_np.attachNewNode(sphere_light_node)
+        sphere_light_np.setPos(0, 0, 0.5)
+
+        return (status_np, sphere_light_np)
+
+    status_nps = {
+        'green': setup_light('green', (0, 255, 0, 1)),
+        'red': setup_light('red', (255, 0, 0, 1))
+    }
+
+    __set_status(Status.IDLE)
 
     # Create task chain to allow speech recognition 
     # to run on a thread separate from the rendering thread
@@ -66,13 +91,29 @@ def focus(app):
     if app.is_solved(Puzzle.HOLD) and app.is_solved(Puzzle.LOCALIZATION) and app.is_solved(Puzzle.SEQUENCE) and app.is_solved(Puzzle.WIRES):
         app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
 
+def __set_status(status: Status):
+    def handle_lights(on_nps, off_nps):
+        on_status_np, on_light_np = on_nps
+        off_status_np, off_light_np = off_nps
+
+        on_status_np.setLight(on_light_np)
+        off_status_np.setLightOff(off_light_np)
+
+    match status:
+        case Status.LISTENING:
+            handle_lights(status_nps['green'], status_nps['red'])
+        case Status.IDLE:
+            handle_lights(status_nps['red'], status_nps['green'])
+    
 def __task_process_speech(app, task):
     if app.focused != Puzzle.SPEECH:
         return task.done
     # Initialize the recognizer
     # Use the default microphone as the audio source
     with sr.Microphone() as source:
-        audio = recognizer.listen(source, timeout=3)                   
+        __set_status(Status.LISTENING)
+        audio = recognizer.listen(source, timeout=3)             
+        __set_status(Status.IDLE)      
     try:
         # Recognize speech using Google Speech Recognition
         # print("You said " + r.recognize_google(audio))    
