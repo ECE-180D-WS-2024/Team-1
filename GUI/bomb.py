@@ -145,7 +145,7 @@ class BombApp(ShowBase):
         self.mistakes += 1
         self.mistakes_lock.notify_all()
         if self.mistakes == 3:
-            sys.exit()
+            self.explode_bomb()
 
     def solve_puzzle(self, puzzle: Puzzle):
         if puzzle != Puzzle.SPEECH:
@@ -192,6 +192,9 @@ class BombApp(ShowBase):
 
     def decrement_time(self, task: Task):
         self.secs_remain -= 1
+        if self.secs_remain == 0:
+            self.explode_bomb()
+            return task.done
         mins = self.secs_remain // 60
         secs = self.secs_remain - (mins * 60)
         mins_str = str(mins).zfill(2)
@@ -210,6 +213,9 @@ class BombApp(ShowBase):
             self.timer_light_on = False
             task.delayTime = 0.5
         return task.again
+    
+    def explode_bomb(self):
+        self.userExit()
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")

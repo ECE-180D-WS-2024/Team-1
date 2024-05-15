@@ -10,9 +10,9 @@ from direct.task import Task
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
 
 # Constants for the game
-MARGIN_H = 6
-MARGIN_S = 12
-MARGIN_V = 12
+MARGIN_H = 12
+MARGIN_S = 18
+MARGIN_V = 18
 
 STAGE_COUNT = 4
 COLORS = ['r','g','y','b']

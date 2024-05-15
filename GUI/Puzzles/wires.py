@@ -57,7 +57,6 @@ def init(app):
 def focus(app):
     app.bomb.hprInterval(0.25, (-90, 0, 0)).start()
     app.focused = Puzzle.WIRES
-    
 
 def __set_wire_hpr(wire_np, direction):
     h, p, r = wire_np.getHpr()
@@ -65,11 +64,11 @@ def __set_wire_hpr(wire_np, direction):
     wire_np.setHpr(h + direction * angle, p, r)
 
 def cut_wire(app, wire_idx):
-    if not wire_cut[wire_idx]:
+    if not wire_cut[wire_idx - 1]:
         direction = 1 if random.random() < 0.5 else -1
         wire_top_np = app.bomb.find(f'**/wire{wire_idx - 1}.top')
         __set_wire_hpr(wire_top_np, direction)
-        wire_cut[wire_idx] = True
+        wire_cut[wire_idx - 1] = True
         if wire_idx != correct_wire:
             app.handle_mistake()
         else:
