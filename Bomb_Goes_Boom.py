@@ -7,7 +7,7 @@ from Utilities.Orientation import Orientation
 from Utilities.decode import ble_imu_decode
 from Utilities.color_calibration import calibrate
 from multiprocessing import Process, Value
-from GUI.ble_receiver import runner, configRunner
+from GUI.util.ble_receiver import runner, configRunner
 import numpy as np
 import os
 # Mistake threshold

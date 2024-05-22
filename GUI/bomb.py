@@ -1,9 +1,8 @@
-import sys
-
 from argparse import ArgumentParser, Namespace
 
 from puzzles import localization, wires, sequence, speech, hold, Puzzle
 from util.color_calibration import calibrate
+import util.ble_receiver as ble
 
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
@@ -27,6 +26,11 @@ class BombApp(ShowBase):
         self.mistakes = 0
         self.max_mistakes = 3
         self.solved_puzzles = set()
+
+        # Create task chain for input handling
+        # Allocate two threads: one thread is used to communicate with Arduino, 
+        #   other thread is used to pass messages to the message bus
+        ble.spawn(self)
 
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")

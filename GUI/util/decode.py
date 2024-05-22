@@ -1,9 +1,5 @@
-import sys, os
-sys.path.append(os.path.abspath('..'))
-from BLE_Module.BLE_Reader import readIMUmultiprocessing, averageValues
-from Utilities.decode_orientation import decode_orientation
-from Utilities.Orientation import Orientation
-from Utilities.Direction import Direction
+from .Orientation import Orientation
+from .Direction import Direction
 
 def ble_imu_decode(orientation):
     match orientation:
@@ -15,7 +11,7 @@ def ble_imu_decode(orientation):
             return Orientation.ANTENNA_DOWN
         case 3:
             return Orientation.ANTENNA_UP
-        case default:
+        case _:
             return Orientation.UNRECOGNIZED
 
 def ble_direction_decode(direction):
@@ -28,6 +24,6 @@ def ble_direction_decode(direction):
             return Direction.RIGHT
         case 4:
             return Direction.DOWN
-        case default:
+        case _:
             return Direction.NO_INPUT
 

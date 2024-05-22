@@ -1,12 +1,15 @@
 from bleak import BleakScanner, BleakClient
 from bleak.backends.device import BLEDevice
 from enum import Enum, auto
-from multiprocessing import Process, Value
+from multiprocessing import Value
 import struct
 import math
-import asyncio
 import time
+import random
+import asyncio
 
+from direct.showbase.Messenger import Messenger
+from .decode import ble_imu_decode
 
 X_ACCEL_CHAR_UUID = "663fdcf8-2126-464d-a6c1-c882f5477fb7"
 Y_ACCEL_CHAR_UUID = "e6ac0344-9aee-49ab-b601-1d26b77cf08c"
@@ -163,16 +166,17 @@ async def mainClock(t):
     else:
         print("could not connect!")
 
-async def mainAll(orientation, t, sequence, wire, skip, speech, rgb):
+async def mainAll(orientation, t, sequence, wire, speech, rgb):
     controller = BLEController()
+    print("mainAll")
     if await controller.connect():
+        print("connected")
         await controller.activateHW()
         while True:
             orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
             t.value = await controller.read_char(TIME_CHAR_UUID)
             sequence.value = await controller.read_char(SEQUENCE_CHAR_UUID)
             wire.value = await controller.read_char(WIRE_CHAR_UUID)
-            skip.value = await controller.read_char(SKIP_CHAR_UUID)
             speech.value = await controller.read_char(SPEECH_CHAR_UUID)
             rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
 
@@ -185,21 +189,71 @@ async def configRGB(encode_rgb):
             if ack == -1:
                 await sub_controller.client.disconnect()
                 return
-            
-def runner(orientation, t, sequence, wire, skip, speech, rgb):
-    asyncio.run(mainAll(orientation, t, sequence, wire, skip, speech, rgb))
 
-def configRunner(encode_rgb):
-    asyncio.run(configRGB(encode_rgb))
+def runner(orientation, t, sequence, wire, speech, rgb):
+    asyncio.run(mainAll(orientation, t, sequence, wire, speech, rgb))
 
-if __name__ == '__main__':
-    orientation = Value('i', 0)
-    t = Value('i', 0)
-    sequence = Value('i', 0)
-    wire = Value('i', 0)
-    skip = Value('i', 0)
-    speech = Value('i', 0)
+"""
+    Allocates memory and begins the communications loop
+"""
+class InputMessenger(Messenger):
+    def __init__(self):
+        super().__init__()
+
+
+def spawn(app):
+    orientation = Value('i', 0) # Use to get Orientation
+    time = Value('i', 0) # Use to get time value in seconds
+    seq = Value('i', 0) # Use to get Sequence Selection
+    wire = Value('i', 0) # Use to get Wire Selection
+    words = Value('i', 0)
     rgb = Value('i', 0)
-    p = Process(target=runner, args=(orientation, t, sequence, wire, skip, speech, rgb))
-    p.start()
-    p.join()
+
+    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
+    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
+    encode_rgb = color * 10 + freq
+
+    messenger = InputMessenger()
+
+    state_dict = {
+        'orientation': None,
+        'time': None,
+        'sequence': None,
+        'wire': None,
+        'words': None,
+        'rgb': None
+    }
+
+    app.taskMgr.setupTaskChain('message_bus', numThreads=1)
+    app.taskMgr.setupTaskChain('ble_receiver', numThreads=1)
+
+    app.taskMgr.add(task_check_data, extraArgs=[messenger, state_dict, orientation, time, seq, wire, words, rgb], appendTask=True, taskChain='message_bus')
+    app.taskMgr.add(runner, extraArgs=[orientation, time, seq, wire, words, rgb], taskChain='ble_receiver')
+
+def poll_button_and_handle_message(messenger, state_dict, key, ble_value):
+    if ble_value.value != 0:
+        if state_dict[key] == None:
+            messenger.send(key, sentArgs=[ble_value.value])
+            state_dict[key] = ble_value.value
+    else:
+        state_dict[key] = None
+
+
+def task_check_data(messenger: InputMessenger, prev_values, orientation, t, sequence, wire, speech, rgb, task):
+    print("check_data")
+    # Use time decrement as heartbeat
+    if prev_values['time'] != t.value:
+        messenger.send('heartbeat', sentArgs=[t.value])
+        prev_values['time'] = t.value
+        print(f'time: {t.value}')
+    
+    decoded_orientation = ble_imu_decode(orientation)
+    if prev_values['orientation'] != decoded_orientation:
+        messenger.send('orientation', sentArgs=[decoded_orientation])
+        prev_values['orientation'] = decoded_orientation
+        print(f'orientation: {decoded_orientation}')
+
+    poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence)
+    poll_button_and_handle_message(messenger, prev_values, 'wire', wire)
+
+    return task.again
