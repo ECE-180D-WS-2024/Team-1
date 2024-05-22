@@ -8,7 +8,7 @@ import asyncio
 import random
 
 from direct.showbase.Messenger import Messenger
-from .decode import ble_imu_decode
+from .decode import ble_imu_decode, ble_wires_decode, ble_rgb_decode, ble_sequence_decode
 
 X_ACCEL_CHAR_UUID = "663fdcf8-2126-464d-a6c1-c882f5477fb7"
 Y_ACCEL_CHAR_UUID = "e6ac0344-9aee-49ab-b601-1d26b77cf08c"
@@ -70,9 +70,7 @@ async def mainAll(orientation, t, sequence, wire, rgb):
     freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
     encode_rgb = color * 10 + freq
     controller = BLEController()
-    print("mainAll")
     if await controller.connect():
-        print("connected")
         await controller.activateHW()
         await controller.configRGB(encode_rgb)
         while True:
@@ -100,10 +98,6 @@ def spawn(app):
     wire = Value('i', 0) # Use to get Wire Selection
     rgb = Value('i', 0)
 
-    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
-    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
-    encode_rgb = color * 10 + freq
-
     messenger = InputMessenger()
 
     state_dict = {
@@ -120,16 +114,16 @@ def spawn(app):
     app.taskMgr.add(task_check_data, extraArgs=[messenger, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
     app.taskMgr.add(runner, extraArgs=[orientation, time, seq, wire, rgb], taskChain='ble_receiver')
 
-def poll_button_and_handle_message(messenger, state_dict, key, ble_value):
+def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode):
     if ble_value.value != 0:
         if state_dict[key] == None:
-            messenger.send(key, sentArgs=[ble_value.value])
+            messenger.send(key, sentArgs=[decode(ble_value.value)])
             state_dict[key] = ble_value.value
     else:
         state_dict[key] = None
 
 
-def task_check_data(messenger: InputMessenger, prev_values, orientation, t, sequence, wire, speech, rgb, task):
+def task_check_data(messenger: InputMessenger, prev_values, orientation, t, sequence, wire, rgb, task):
     print("check_data")
     # Use time decrement as heartbeat
     if prev_values['time'] != t.value:
@@ -143,7 +137,7 @@ def task_check_data(messenger: InputMessenger, prev_values, orientation, t, sequ
         prev_values['orientation'] = decoded_orientation
         print(f'orientation: {decoded_orientation}')
 
-    poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence)
-    poll_button_and_handle_message(messenger, prev_values, 'wire', wire)
+    poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence, ble_sequence_decode)
+    poll_button_and_handle_message(messenger, prev_values, 'wire', wire, ble_wires_decode)
 
     return task.again

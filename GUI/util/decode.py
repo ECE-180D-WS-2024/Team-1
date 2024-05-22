@@ -1,7 +1,8 @@
 from .Orientation import Orientation
 from .Direction import Direction
 from .RGB import RGB
-from .Wires import Wires
+from .Wires import Wire
+from .Sequence import Sequence
 
 def ble_imu_decode(orientation):
     match orientation:
@@ -40,16 +41,29 @@ def ble_rgb_decode(rgb):
 def ble_wires_decode(wires):
     match wires:
         case 1:
-            return Wires.WIRE_1
+            return Wire.WIRE_1
         case 2:
-            return Wires.WIRE_2
+            return Wire.WIRE_2
         case 3:
-            return Wires.WIRE_3
+            return Wire.WIRE_3
         case 4:
-            return Wires.WIRE_4
+            return Wire.WIRE_4
         case 5:
-            return Wires.WIRE_5
+            return Wire.WIRE_5
         case 6:
-            return Wires.WIRE_6
+            return Wire.WIRE_6
         case _:
-            return Wires.NO_PRESS
+            return Wire.NO_PRESS
+
+def ble_sequence_decode(sequence):
+    match sequence:
+        case 1:
+            return Sequence.TOP_LEFT
+        case 2:
+            return Sequence.TOP_RIGHT
+        case 3:
+            return Sequence.BOTTOM_LEFT
+        case 4:
+            return Sequence.BOTTOM_RIGHT
+        case _:
+            return Sequence.NO_PRESS
