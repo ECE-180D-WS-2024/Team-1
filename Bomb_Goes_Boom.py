@@ -31,16 +31,8 @@ def main():
     time = Value('i', 0) # Use to get time value in seconds
     seq = Value('i', 0) # Use to get Sequence Selection
     wire = Value('i', 0) # Use to get Wire Selection
-    skip = Value('i', 0)
-    words = Value('i', 0)
     rgb = Value('i', 0)
-    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
-    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
-    encode_rgb = color * 10 + freq
-    p_config = Process(target=configRunner, args=[encode_rgb])
-    p_config.start()
-    p_config.join()
-    p = Process(target=runner, args=(orientation, time, seq, wire, skip, words, rgb))
+    p = Process(target=runner, args=(orientation, time, seq, wire, rgb))
     p.start()
 
     wires.init()

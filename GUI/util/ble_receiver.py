@@ -2,11 +2,10 @@ from bleak import BleakScanner, BleakClient
 from bleak.backends.device import BLEDevice
 from enum import Enum, auto
 from multiprocessing import Value
-import struct
-import math
-import time
+
 import random
 import asyncio
+import random
 
 from direct.showbase.Messenger import Messenger
 from .decode import ble_imu_decode
@@ -53,84 +52,11 @@ class BLEController():
         # Create client
         self.client: BleakClient = BleakClient(self.device)
         return await self.client.connect()
-    
-    def read_accelerometer_axis(self, axis: Axis) -> bytearray:
-        char_uuid: str = ''
-        match axis:
-            case Axis.X:
-                char_uuid = X_ACCEL_CHAR_UUID
-            case Axis.Y:
-                char_uuid = Y_ACCEL_CHAR_UUID
-            case Axis.Z:
-                char_uuid = Z_ACCEL_CHAR_UUID
-        return self.client.read_gatt_char(char_uuid)
 
-    async def read_accelerometer(self) -> dict[str, float]:
-        data_dict = {'x': -math.inf, 'y': -math.inf, 'z': -math.inf}
-        x_bytes = self.read_accelerometer_axis(Axis.X)
-        y_bytes = self.read_accelerometer_axis(Axis.Y)
-        z_bytes = self.read_accelerometer_axis(Axis.Z)
-
-        x = struct.unpack('f', await x_bytes)
-        y = struct.unpack('f', await y_bytes)
-        z = struct.unpack('f', await z_bytes)
-
-        data_dict['x'] = x
-        data_dict['y'] = y
-        data_dict['z'] = z
-        
-        return data_dict
-    
-    def read_gyro_axis(self, axis: Axis) -> bytearray:
-        char_uuid: str = ''
-        match axis:
-            case Axis.X:
-                char_uuid = X_ANGULAR_VELO_CHAR_UUID
-            case Axis.Y:
-                char_uuid = Y_ANGULAR_VELO_CHAR_UUID
-            case Axis.Z:
-                char_uuid = Z_ANGULAR_VELO_CHAR_UUID
-        return self.client.read_gatt_char(char_uuid)
-    
-    async def read_gyro(self) -> dict[str, float]:
-        data_dict = {'x': math.nan, 'y': math.nan, 'z': math.nan}
-        x_bytes = self.read_gyro_axis(Axis.X)
-        y_bytes = self.read_gyro_axis(Axis.Y)
-        z_bytes = self.read_gyro_axis(Axis.Z)
-
-        t0 = time.time()
-        x_bytes = await x_bytes
-        # async_vals = await asyncio.gather(x_bytes, y_bytes, z_bytes)
-        t1 = time.time()
-        print(f'took {(t1 - t0) * 1000}ms')
-        x = struct.unpack('f', x_bytes)
-
-
-        #x = struct.unpack('f', async_vals[0])
-        y = 0
-        z = 0
-        #y = struct.unpack('f', async_vals[1])
-        #z = struct.unpack('f', async_vals[2])
-
-        data_dict['x'] = x
-        data_dict['y'] = y
-        data_dict['z'] = z
-        
-        return data_dict
-    
     async def read_char(self, char_uuid: str) -> int:
         bytes = await self.client.read_gatt_char(char_uuid)
         val = int.from_bytes(bytes, "little", signed=True)
         return val
-    
-    
-    async def read_into_mem(self, shared_arr: list[float], axis: Axis, idx: int):
-        bytes = await self.read_accelerometer_axis(axis)
-       # t0 = time.time()
-        #t1 = time.time()
-        #print(f'took {(t1 - t0) * 1000}ms')
-        val = int.from_bytes(bytes, 'little', signed=True) / 1000.0
-        shared_arr[idx] = val
 
     async def activateHW(self):
         await self.client.write_gatt_char(START_CHAR_UUID, bytearray([1]))
@@ -138,60 +64,26 @@ class BLEController():
     async def configRGB(self, encode_rgb: int):
         await self.client.write_gatt_char(RGB_CHAR_UUID, bytearray([encode_rgb]))
 
-async def main():
-    controller = BLEController()
-    if await controller.connect():
-        while True:
-            await controller.read_gyro()
-    else:
-        print("could not connect!")
 
-async def mainShared(x_arr, y_arr, z_arr):
-    controller = BLEController()
-    if await controller.connect():
-        idx = 0
-        while True:
-            await controller.read_into_mem(x_arr, Axis.X, idx)
-            await controller.read_into_mem(y_arr, Axis.Y, idx)
-            await controller.read_into_mem(z_arr, Axis.Z, idx)
-            idx = (idx + 1) % WINDOW_WIDTH
-    else:
-        print("could not connect!")
-
-async def mainClock(t):
-    controller = BLEController()
-    if await controller.connect():
-        while True:
-            t.value = await controller.read_clock()
-    else:
-        print("could not connect!")
-
-async def mainAll(orientation, t, sequence, wire, speech, rgb):
+async def mainAll(orientation, t, sequence, wire, rgb):
+    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
+    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
+    encode_rgb = color * 10 + freq
     controller = BLEController()
     print("mainAll")
     if await controller.connect():
         print("connected")
         await controller.activateHW()
+        await controller.configRGB(encode_rgb)
         while True:
             orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
             t.value = await controller.read_char(TIME_CHAR_UUID)
             sequence.value = await controller.read_char(SEQUENCE_CHAR_UUID)
             wire.value = await controller.read_char(WIRE_CHAR_UUID)
-            speech.value = await controller.read_char(SPEECH_CHAR_UUID)
             rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
 
-async def configRGB(encode_rgb):
-    sub_controller = BLEController(device_name="RGB Config")
-    if await sub_controller.connect():
-        await sub_controller.configRGB(encode_rgb)
-        while True:
-            ack = await sub_controller.read_char(RGB_CHAR_UUID)
-            if ack == -1:
-                await sub_controller.client.disconnect()
-                return
-
-def runner(orientation, t, sequence, wire, speech, rgb):
-    asyncio.run(mainAll(orientation, t, sequence, wire, speech, rgb))
+def runner(orientation, t, sequence, wire, rgb):
+    asyncio.run(mainAll(orientation, t, sequence, wire, rgb))
 
 """
     Allocates memory and begins the communications loop
@@ -206,7 +98,6 @@ def spawn(app):
     time = Value('i', 0) # Use to get time value in seconds
     seq = Value('i', 0) # Use to get Sequence Selection
     wire = Value('i', 0) # Use to get Wire Selection
-    words = Value('i', 0)
     rgb = Value('i', 0)
 
     color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
@@ -220,15 +111,14 @@ def spawn(app):
         'time': None,
         'sequence': None,
         'wire': None,
-        'words': None,
         'rgb': None
     }
 
     app.taskMgr.setupTaskChain('message_bus', numThreads=1)
     app.taskMgr.setupTaskChain('ble_receiver', numThreads=1)
 
-    app.taskMgr.add(task_check_data, extraArgs=[messenger, state_dict, orientation, time, seq, wire, words, rgb], appendTask=True, taskChain='message_bus')
-    app.taskMgr.add(runner, extraArgs=[orientation, time, seq, wire, words, rgb], taskChain='ble_receiver')
+    app.taskMgr.add(task_check_data, extraArgs=[messenger, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
+    app.taskMgr.add(runner, extraArgs=[orientation, time, seq, wire, rgb], taskChain='ble_receiver')
 
 def poll_button_and_handle_message(messenger, state_dict, key, ble_value):
     if ble_value.value != 0:

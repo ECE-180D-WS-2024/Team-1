@@ -2,7 +2,7 @@ from enum import Enum
 
 class Direction(Enum):
     NO_INPUT = 0
-    UP = 1
-    LEFT = 2
-    RIGHT = 3
-    DOWN = 4
+    TOP_RIGHT = 1
+    BOTTOM_RIGHT = 2
+    TOP_LEFT = 3
+    BOTTOM_LEFT = 4
