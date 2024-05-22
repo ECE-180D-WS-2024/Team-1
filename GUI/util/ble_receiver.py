@@ -9,6 +9,7 @@ import random
 
 from direct.showbase.Messenger import Messenger
 from .decode import ble_imu_decode, ble_wires_decode, ble_rgb_decode, ble_sequence_decode
+from . import event
 
 X_ACCEL_CHAR_UUID = "663fdcf8-2126-464d-a6c1-c882f5477fb7"
 Y_ACCEL_CHAR_UUID = "e6ac0344-9aee-49ab-b601-1d26b77cf08c"
@@ -52,7 +53,6 @@ class BLEController():
         # Discover device
         self.device: BLEDevice = await self.discover()
         if self.device is None:
-            print("discovery failed")
             return False
 
         # Create client
@@ -128,10 +128,10 @@ def spawn(app):
     app.taskMgr.add(task_check_data, extraArgs=[app, messenger, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
     app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb], taskChain='ble_receiver')
 
-def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode):
+def poll_button_and_handle_message(messenger, state_dict, key, ble_value):
     if ble_value.value != 0:
         if state_dict[key] == None:
-            messenger.send(key, sentArgs=[decode(ble_value.value)])
+            messenger.send(event.encode(key, ble_value.value))
             state_dict[key] = ble_value.value
     else:
         state_dict[key] = None
@@ -148,10 +148,10 @@ def task_check_data(app, messenger: InputMessenger, prev_values, orientation, t,
     
     decoded_orientation = ble_imu_decode(orientation)
     if prev_values['orientation'] != decoded_orientation:
-        messenger.send('orientation', sentArgs=[decoded_orientation])
+        messenger.send(event.encode('orientation', decoded_orientation))
         prev_values['orientation'] = decoded_orientation
 
-    poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence, ble_sequence_decode)
-    poll_button_and_handle_message(messenger, prev_values, 'wire', wire, ble_wires_decode)
+    poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence)
+    poll_button_and_handle_message(messenger, prev_values, 'wire', wire)
 
     return task.again

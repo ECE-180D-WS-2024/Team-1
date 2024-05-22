@@ -4,6 +4,10 @@ from argparse import ArgumentParser, Namespace
 from puzzles import localization, wires, sequence, speech, hold, Puzzle
 from util.color_calibration import calibrate
 import util.ble_receiver as ble
+from util.Orientation import Orientation
+from util.Sequence import Sequence
+from util.Wires import Wire
+import util.event as event
 
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
@@ -170,6 +174,21 @@ class BombApp(ShowBase):
         return puzzle in self.solved_puzzles
 
     def __setup_controls(self):
+
+        self.accept(event.encode('orientation', Orientation.LOCALIZATION), localization.focus, extraArgs=[self])
+        self.accept(event.encode('orientation', Orientation.LOCALIZATION), speech.focus, extraArgs=[self])
+        self.accept(event.encode('orientation', Orientation.WIRES), wires.focus, extraArgs=[self])
+        self.accept(event.encode('orientation', Orientation.SEQUENCING), sequence.focus, extraArgs=[self])
+        self.accept(event.encode('orientation', Orientation.CLOCK), hold.focus, extraArgs=[self])
+
+        self.accept(event.encode('sequence', Sequence.TOP_LEFT), sequence.press_btn, extraArgs=[self, (0, 0), (0.200018, 1.04975, 0.193841)])
+        self.accept(event.encode('sequence', Sequence.TOP_RIGHT), sequence.press_btn, extraArgs=[self, (0, 1), (-0.199982, 1.04975, 0.193841)])
+        self.accept(event.encode('sequence', Sequence.BOTTOM_LEFT), sequence.press_btn, extraArgs=[self, (1, 0), (0.200018, 1.04975, -0.206159)])
+        self.accept(event.encode('sequence', Sequence.BOTTOM_RIGHT), sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
+
+        for i in range(7):
+            self.accept(event.encode('wires', i), wires.cut_wire, extraArgs=[self, i])
+
         self.accept('q', localization.focus, extraArgs=[self])
         self.accept('w', speech.focus, extraArgs=[self])
         self.accept('e', wires.focus, extraArgs=[self])
