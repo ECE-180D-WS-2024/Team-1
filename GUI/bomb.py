@@ -1,3 +1,4 @@
+import sys
 from argparse import ArgumentParser, Namespace
 
 from puzzles import localization, wires, sequence, speech, hold, Puzzle
@@ -11,7 +12,6 @@ from direct.stdpy.threading import Condition
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
 
-
 class BombApp(ShowBase):
     def __init__(self, args: Namespace):
         ShowBase.__init__(self)
@@ -21,6 +21,7 @@ class BombApp(ShowBase):
         self.args = args
         self.secs_remain = 180
         self.timer_light_on = False
+        self.running = True
         # Create a mutex for mistakes variable for compatibility with speech's multithreaded nature
         self.mistakes_lock = Condition()
         self.mistakes = 0
@@ -79,6 +80,10 @@ class BombApp(ShowBase):
             localization.init(self, calibrate())
 
         self.__setup_controls()
+
+    def finalizeExit(self):
+        self.running = False
+        sys.exit()
 
     def __setup_timer(self):
         timer_node = self.bomb.find("**/timer")

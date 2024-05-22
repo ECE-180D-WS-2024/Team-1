@@ -169,7 +169,7 @@ def task_process_cv_frame(task_state, task: Task):
     height = dimens["height"]
     margin_x = dimens["margin_x"]
 
-    if app.focused != Puzzle.LOCALIZATION:
+    if app.focused != Puzzle.LOCALIZATION or not app.running:
         cv2.destroyAllWindows()
         cap.release()
         return task.done

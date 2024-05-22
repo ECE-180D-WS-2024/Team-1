@@ -106,7 +106,7 @@ def __set_status(status: Status):
             handle_lights(status_nps['red'], status_nps['green'])
     
 def __task_process_speech(app, task):
-    if app.focused != Puzzle.SPEECH:
+    if app.focused != Puzzle.SPEECH or not app.running:
         return task.done
     # Initialize the recognizer
     # Use the default microphone as the audio source

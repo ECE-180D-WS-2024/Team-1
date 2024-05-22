@@ -41,17 +41,26 @@ class BLEController():
 
     async def discover(self) -> BLEDevice:
         device: BLEDevice = None
-        while device is None:
-            device = await BleakScanner.find_device_by_name(self.device_name)
+        attempts = 0
+        while device is None and attempts < 3:
+            device = await BleakScanner.find_device_by_name(self.device_name, timeout=5)
+            if device is None:
+                attempts += 1
         return device
 
     async def connect(self) -> bool:
         # Discover device
         self.device: BLEDevice = await self.discover()
+        if self.device is None:
+            print("discovery failed")
+            return False
 
         # Create client
         self.client: BleakClient = BleakClient(self.device)
         return await self.client.connect()
+
+    async def disconnect(self):
+        self.client.disconnect()
 
     async def read_char(self, char_uuid: str) -> int:
         bytes = await self.client.read_gatt_char(char_uuid)
@@ -65,23 +74,28 @@ class BLEController():
         await self.client.write_gatt_char(RGB_CHAR_UUID, bytearray([encode_rgb]))
 
 
-async def mainAll(orientation, t, sequence, wire, rgb):
+async def mainAll(app, orientation, t, sequence, wire, rgb):
     color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
     freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
     encode_rgb = color * 10 + freq
     controller = BLEController()
+
     if await controller.connect():
         await controller.activateHW()
         await controller.configRGB(encode_rgb)
         while True:
+            print("loop")
+            if not app.running:
+                break
             orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
             t.value = await controller.read_char(TIME_CHAR_UUID)
             sequence.value = await controller.read_char(SEQUENCE_CHAR_UUID)
             wire.value = await controller.read_char(WIRE_CHAR_UUID)
             rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
+        await controller.disconnect()
 
-def runner(orientation, t, sequence, wire, rgb):
-    asyncio.run(mainAll(orientation, t, sequence, wire, rgb))
+def runner(app, orientation, t, sequence, wire, rgb):
+    asyncio.run(mainAll(app, orientation, t, sequence, wire, rgb))
 
 """
     Allocates memory and begins the communications loop
@@ -111,8 +125,8 @@ def spawn(app):
     app.taskMgr.setupTaskChain('message_bus', numThreads=1)
     app.taskMgr.setupTaskChain('ble_receiver', numThreads=1)
 
-    app.taskMgr.add(task_check_data, extraArgs=[messenger, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
-    app.taskMgr.add(runner, extraArgs=[orientation, time, seq, wire, rgb], taskChain='ble_receiver')
+    app.taskMgr.add(task_check_data, extraArgs=[app, messenger, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
+    app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb], taskChain='ble_receiver')
 
 def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode):
     if ble_value.value != 0:
@@ -123,19 +137,19 @@ def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode
         state_dict[key] = None
 
 
-def task_check_data(messenger: InputMessenger, prev_values, orientation, t, sequence, wire, rgb, task):
-    print("check_data")
+def task_check_data(app, messenger: InputMessenger, prev_values, orientation, t, sequence, wire, rgb, task):
+    if not app.running:
+        return task.done
+
     # Use time decrement as heartbeat
     if prev_values['time'] != t.value:
         messenger.send('heartbeat', sentArgs=[t.value])
         prev_values['time'] = t.value
-        print(f'time: {t.value}')
     
     decoded_orientation = ble_imu_decode(orientation)
     if prev_values['orientation'] != decoded_orientation:
         messenger.send('orientation', sentArgs=[decoded_orientation])
         prev_values['orientation'] = decoded_orientation
-        print(f'orientation: {decoded_orientation}')
 
     poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence, ble_sequence_decode)
     poll_button_and_handle_message(messenger, prev_values, 'wire', wire, ble_wires_decode)
