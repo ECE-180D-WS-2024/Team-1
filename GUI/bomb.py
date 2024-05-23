@@ -71,7 +71,7 @@ class BombApp(ShowBase):
         speech.init(self)
         sequence.init(self)
         wires.init(self)
-        hold.init(self)
+        rgb_encoding = hold.init(self)
 
         if args.no_color_calibration:
             localization.init(self, [0,0,0])            
@@ -81,7 +81,7 @@ class BombApp(ShowBase):
         # Create task chain for input handling
         # Allocate two threads: one thread is used to communicate with Arduino, 
         #   other thread is used to pass messages to the message bus
-        ble.spawn(self)
+        ble.spawn(self, rgb_encoding)
 
         self.__setup_controls()
 
@@ -226,7 +226,7 @@ class BombApp(ShowBase):
         return task.again
     
     def explode_bomb(self):
-        self.userExit()
+        self.finalizeExit()
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")

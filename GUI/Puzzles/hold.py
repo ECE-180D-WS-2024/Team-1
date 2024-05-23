@@ -104,8 +104,8 @@ def init(app):
                 Wait(1)
             )
 
-    # rgb_encoding = color_num * 10 + freq
-    # return rgb_encoding
+    rgb_encoding = color_num * 10 + freq
+    return rgb_encoding
 
 def focus(app):
     app.bomb.hprInterval(0.25, (0, 90, 0)).start()

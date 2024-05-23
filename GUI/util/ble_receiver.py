@@ -77,15 +77,12 @@ class BLEController():
         await self.client.write_gatt_char(RGB_CHAR_UUID, bytearray([encode_rgb]))
 
 
-async def mainAll(app, orientation, t, sequence, wire, rgb):
-    color = random.randint(0, 5) # Color Sent to the bomb: 0 red, 1 green, 2 blue, 3 yellow, 4 purple, 5 white
-    freq = random.randint(0, 2) # Flash freq sent to the bomb: 0 none, 1 fast, 2 slow
-    encode_rgb = color * 10 + freq
+async def mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding):
     controller = BLEController()
 
     if await controller.connect():
         await controller.activateHW()
-        await controller.configRGB(encode_rgb)
+        await controller.configRGB(rgb_encoding)
         while True:
             if not app.running:
                 break
@@ -96,13 +93,13 @@ async def mainAll(app, orientation, t, sequence, wire, rgb):
             rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
         await controller.disconnect()
 
-def runner(app, orientation, t, sequence, wire, rgb):
-    asyncio.run(mainAll(app, orientation, t, sequence, wire, rgb))
+def runner(app, orientation, t, sequence, wire, rgb, rgb_encoding):
+    asyncio.run(mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding))
 
 """
     Allocates memory and begins the communications loop
 """
-def spawn(app):
+def spawn(app, rgb_encoding):
     orientation = Value('i', 0) # Use to get Orientation
     time = Value('i', 0) # Use to get time value in seconds
     seq = Value('i', 0) # Use to get Sequence Selection
@@ -121,7 +118,7 @@ def spawn(app):
     app.taskMgr.setupTaskChain('ble_receiver', numThreads=1)
 
     app.taskMgr.add(task_check_data, extraArgs=[app, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
-    app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb], taskChain='ble_receiver')
+    app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb, rgb_encoding], taskChain='ble_receiver')
 
 def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode_fn):
     if ble_value.value != 0:
