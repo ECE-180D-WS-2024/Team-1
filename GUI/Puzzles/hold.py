@@ -92,17 +92,20 @@ def init(app):
         case 1:
             light_sequence = Sequence(
                 Func(light_np.setTexture, color_tex),
-                Wait(0.75),
+                Wait(0.15),
                 Func(light_np.setTexture, default_tex),
-                Wait(0.75)
+                Wait(0.15)
             )
         case 2:
             light_sequence = Sequence(
                 Func(light_np.setTexture, color_tex),
-                Wait(0.25),
+                Wait(1),
                 Func(light_np.setTexture, default_tex),
-                Wait(0.25)
+                Wait(1)
             )
+
+    # rgb_encoding = color_num * 10 + freq
+    # return rgb_encoding
 
 def focus(app):
     app.bomb.hprInterval(0.25, (0, 90, 0)).start()

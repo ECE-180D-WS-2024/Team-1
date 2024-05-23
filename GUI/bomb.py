@@ -6,7 +6,7 @@ from util.color_calibration import calibrate
 import util.ble_receiver as ble
 from util.Orientation import Orientation
 from util.Sequence import Sequence
-from util.Wires import Wire
+from util.RGB import RGB
 import util.event as event
 
 from direct.showbase.ShowBase import ShowBase
@@ -31,11 +31,6 @@ class BombApp(ShowBase):
         self.mistakes = 0
         self.max_mistakes = 3
         self.solved_puzzles = set()
-
-        # Create task chain for input handling
-        # Allocate two threads: one thread is used to communicate with Arduino, 
-        #   other thread is used to pass messages to the message bus
-        ble.spawn(self)
 
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
@@ -83,6 +78,11 @@ class BombApp(ShowBase):
         else:
             localization.init(self, calibrate())
 
+        # Create task chain for input handling
+        # Allocate two threads: one thread is used to communicate with Arduino, 
+        #   other thread is used to pass messages to the message bus
+        ble.spawn(self)
+
         self.__setup_controls()
 
     def finalizeExit(self):
@@ -117,7 +117,6 @@ class BombApp(ShowBase):
         self.timer_light_np.setPos(0, 0, 0.5)
 
         self.task_blink_colon = self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
-        self.task_decr_time = self.taskMgr.add(self.decrement_time, "decrement_time", delay=1)
         self.task_blink_timer_light = self.taskMgr.add(self.blink_timer_light, "blink_light", delay=1)
 
     def __setup_num_displays(self):
@@ -174,9 +173,10 @@ class BombApp(ShowBase):
         return puzzle in self.solved_puzzles
 
     def __setup_controls(self):
+        self.accept('heartbeat', self.set_time)
 
         self.accept(event.encode('orientation', Orientation.LOCALIZATION), localization.focus, extraArgs=[self])
-        self.accept(event.encode('orientation', Orientation.LOCALIZATION), speech.focus, extraArgs=[self])
+        self.accept(event.encode('orientation', Orientation.SPEECH), speech.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.WIRES), wires.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.SEQUENCING), sequence.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.CLOCK), hold.focus, extraArgs=[self])
@@ -186,26 +186,11 @@ class BombApp(ShowBase):
         self.accept(event.encode('sequence', Sequence.BOTTOM_LEFT), sequence.press_btn, extraArgs=[self, (1, 0), (0.200018, 1.04975, -0.206159)])
         self.accept(event.encode('sequence', Sequence.BOTTOM_RIGHT), sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
 
+        self.accept(event.encode('rgb', RGB.PRESSED), hold.push_button, extraArgs=[self])
+        self.accept(event.encode('rgb', RGB.NOT_PRESSED), hold.release_button, extraArgs=[self])
+
         for i in range(7):
             self.accept(event.encode('wires', i), wires.cut_wire, extraArgs=[self, i])
-
-        self.accept('q', localization.focus, extraArgs=[self])
-        self.accept('w', speech.focus, extraArgs=[self])
-        self.accept('e', wires.focus, extraArgs=[self])
-        self.accept('a', sequence.focus, extraArgs=[self])
-        self.accept('s', hold.focus, extraArgs=[self])
-        self.accept('d', self.rotate_bomb_feet)
-        self.accept('space', hold.push_button, extraArgs=[self])
-        self.accept('space-up', hold.release_button, extraArgs=[self])
-
-        # Magic numbers are from original positions. Data gathered from calling .ls() on node paths
-        self.accept('i', sequence.press_btn, extraArgs=[self, (0, 0), (0.200018, 1.04975, 0.193841)])
-        self.accept('o', sequence.press_btn, extraArgs=[self, (0, 1), (-0.199982, 1.04975, 0.193841)])
-        self.accept('k', sequence.press_btn, extraArgs=[self, (1, 0), (0.200018, 1.04975, -0.206159)])
-        self.accept('l', sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
-
-        for i in range(7):
-            self.accept(str(i), wires.cut_wire, extraArgs=[self, i])
 
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
@@ -218,17 +203,15 @@ class BombApp(ShowBase):
         task.delayTime = 1
         return task.again
 
-    def decrement_time(self, task: Task):
-        self.secs_remain -= 1
+    def set_time(self, time):
+        self.secs_remain = time
         if self.secs_remain == 0:
             self.explode_bomb()
-            return task.done
         mins = self.secs_remain // 60
         secs = self.secs_remain - (mins * 60)
         mins_str = str(mins).zfill(2)
         secs_str = str(secs).zfill(2)
         self.timer_text_node.setText(f'{mins_str}:{secs_str}')
-        return task.again
     
     def blink_timer_light(self, task: Task):
         if not self.timer_light_on:

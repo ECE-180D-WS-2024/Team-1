@@ -7,9 +7,12 @@ import random
 import asyncio
 import random
 
-from direct.showbase.Messenger import Messenger
 from .decode import ble_imu_decode, ble_wires_decode, ble_rgb_decode, ble_sequence_decode
 from . import event
+from .RGB import RGB
+from .Orientation import Orientation
+from .Sequence import Sequence
+from .Wires import Wire
 
 X_ACCEL_CHAR_UUID = "663fdcf8-2126-464d-a6c1-c882f5477fb7"
 Y_ACCEL_CHAR_UUID = "e6ac0344-9aee-49ab-b601-1d26b77cf08c"
@@ -60,7 +63,7 @@ class BLEController():
         return await self.client.connect()
 
     async def disconnect(self):
-        self.client.disconnect()
+        await self.client.disconnect()
 
     async def read_char(self, char_uuid: str) -> int:
         bytes = await self.client.read_gatt_char(char_uuid)
@@ -84,7 +87,6 @@ async def mainAll(app, orientation, t, sequence, wire, rgb):
         await controller.activateHW()
         await controller.configRGB(encode_rgb)
         while True:
-            print("loop")
             if not app.running:
                 break
             orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
@@ -100,11 +102,6 @@ def runner(app, orientation, t, sequence, wire, rgb):
 """
     Allocates memory and begins the communications loop
 """
-class InputMessenger(Messenger):
-    def __init__(self):
-        super().__init__()
-
-
 def spawn(app):
     orientation = Value('i', 0) # Use to get Orientation
     time = Value('i', 0) # Use to get time value in seconds
@@ -112,46 +109,51 @@ def spawn(app):
     wire = Value('i', 0) # Use to get Wire Selection
     rgb = Value('i', 0)
 
-    messenger = InputMessenger()
-
     state_dict = {
-        'orientation': None,
-        'time': None,
-        'sequence': None,
-        'wire': None,
-        'rgb': None
+        'orientation': Orientation.OTHER,
+        'time': 0,
+        'sequence': Sequence.NO_PRESS,
+        'wire': Wire.NO_PRESS,
+        'rgb': RGB.NOT_PRESSED
     }
 
     app.taskMgr.setupTaskChain('message_bus', numThreads=1)
     app.taskMgr.setupTaskChain('ble_receiver', numThreads=1)
 
-    app.taskMgr.add(task_check_data, extraArgs=[app, messenger, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
+    app.taskMgr.add(task_check_data, extraArgs=[app, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
     app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb], taskChain='ble_receiver')
 
-def poll_button_and_handle_message(messenger, state_dict, key, ble_value):
+def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode_fn):
     if ble_value.value != 0:
-        if state_dict[key] == None:
-            messenger.send(event.encode(key, ble_value.value))
-            state_dict[key] = ble_value.value
+        if state_dict[key] is None:
+            decoded = decode_fn(ble_value.value)
+            payload = event.encode(key, decoded)
+            messenger.send(payload)
+            state_dict[key] = decoded
     else:
         state_dict[key] = None
 
 
-def task_check_data(app, messenger: InputMessenger, prev_values, orientation, t, sequence, wire, rgb, task):
+def task_check_data(app, prev_values, orientation, t, sequence, wire, rgb, task):
     if not app.running:
         return task.done
 
     # Use time decrement as heartbeat
     if prev_values['time'] != t.value:
-        messenger.send('heartbeat', sentArgs=[t.value])
+        app.messenger.send('heartbeat', sentArgs=[t.value])
         prev_values['time'] = t.value
     
-    decoded_orientation = ble_imu_decode(orientation)
+    decoded_orientation = ble_imu_decode(orientation.value)
     if prev_values['orientation'] != decoded_orientation:
-        messenger.send(event.encode('orientation', decoded_orientation))
+        app.messenger.send(event.encode('orientation', decoded_orientation))
         prev_values['orientation'] = decoded_orientation
 
-    poll_button_and_handle_message(messenger, prev_values, 'sequence', sequence)
-    poll_button_and_handle_message(messenger, prev_values, 'wire', wire)
+    poll_button_and_handle_message(app.messenger, prev_values, 'sequence', sequence, ble_sequence_decode)
+    poll_button_and_handle_message(app.messenger, prev_values, 'wire', wire, ble_wires_decode)
+
+    decoded_rgb = ble_rgb_decode(rgb.value)
+    if prev_values['rgb'] != decoded_rgb:
+        app.messenger.send(event.encode('rgb', decoded_rgb))
+        prev_values['rgb'] = decoded_rgb
 
     return task.again
