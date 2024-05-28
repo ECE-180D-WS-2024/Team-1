@@ -5,6 +5,8 @@ from direct.gui.DirectButton import DirectButton
 class MyApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+
+        self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.15, pos=(0.8, 0, 0.8), command=self.togglePopup)
         
         # Initialize page index
         self.currentPage = 0
@@ -38,9 +40,9 @@ class MyApp(ShowBase):
         self.pageNumberNodePath = aspect2d.attachNewNode(self.pageNumberNode)
         self.pageNumberNodePath.setScale(0.07)
         self.pageNumberNodePath.setPos(0, 0, -0.6)  # Position the page number below the buttons
-        
-        # Initial update of text and buttons
-        self.updateText()
+
+        self.popupVisible = False
+        self.hidePopup()
 
     def updateText(self):
         # Set text based on current page
@@ -65,6 +67,29 @@ class MyApp(ShowBase):
         if self.currentPage < len(self.pages) - 1:
             self.currentPage += 1
         self.updateText()
+    
+    def togglePopup(self):
+        if self.popupVisible:
+            self.hidePopup()
+        else:
+            self.showPopup()
+    
+    def showPopup(self):
+        self.popupTextNodePath.show()
+        self.prevButton.show()
+        self.nextButton.show()
+        self.pageNumberNodePath.show()
+        self.updateText()
+        self.popupVisible = True
+        self.popupButton["text"] = "Hide Tutorial"
+
+    def hidePopup(self):
+        self.popupTextNodePath.hide()
+        self.prevButton.hide()
+        self.nextButton.hide()
+        self.pageNumberNodePath.hide()
+        self.popupVisible = False
+        self.popupButton["text"] = "Show Tutorial"
 
 app = MyApp()
 app.run()
