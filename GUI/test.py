@@ -16,12 +16,9 @@ class MyApp(ShowBase):
             "Now, we'll go through example games so you, the defusal player, know how all the controls for our game."
         ]
         
-        # Create a text node
+        # Create a text node that displays main popup content
         self.popupTextNode = TextNode('popupTextNode')
         self.popupTextNode.setWordwrap(20)  # Set word wrap to fit text within a certain width
-        self.updateText()
-        
-        # Create a text node path
         self.popupTextNodePath = aspect2d.attachNewNode(self.popupTextNode)
         self.popupTextNodePath.setScale(0.07)  # Adjusted scale to fit text on screen
         self.popupTextNodePath.setPos(-0.4, 0, 0)  # Position the text above the center
@@ -35,18 +32,38 @@ class MyApp(ShowBase):
                                        pos=(0.35, 0, -0.5), command=self.nextPage)
         self.nextButton.setTransparency(True)
 
+        # Text node that displays the current page number
+        self.pageNumberNode = TextNode('pageNumberNode')
+        self.pageNumberNode.setAlign(TextNode.ACenter)
+        self.pageNumberNodePath = aspect2d.attachNewNode(self.pageNumberNode)
+        self.pageNumberNodePath.setScale(0.07)
+        self.pageNumberNodePath.setPos(0, 0, -0.6)  # Position the page number below the buttons
+        
+        # Initial update of text and buttons
+        self.updateText()
+
     def updateText(self):
         # Set text based on current page
         self.popupTextNode.setText(self.pages[self.currentPage])
+        # Show or hide buttons based on current page
+        self.prevButton.show() if self.currentPage > 0 else self.prevButton.hide()
+        self.nextButton.show() if self.currentPage < len(self.pages) - 1 else self.nextButton.hide()
+        self.updatePageNumber()
         
+    def updatePageNumber(self):
+        # Update page number text
+        self.pageNumberNode.setText(f"{self.currentPage + 1}/{len(self.pages)}")
+
     def prevPage(self):
         # Move to previous page
-        self.currentPage = (self.currentPage - 1) % len(self.pages)
+        if self.currentPage > 0:
+            self.currentPage -= 1
         self.updateText()
         
     def nextPage(self):
         # Move to next page
-        self.currentPage = (self.currentPage + 1) % len(self.pages)
+        if self.currentPage < len(self.pages) - 1:
+            self.currentPage += 1
         self.updateText()
 
 app = MyApp()
