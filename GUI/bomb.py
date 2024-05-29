@@ -88,22 +88,22 @@ class BombApp(ShowBase):
         self.__setup_controls() 
 
         # Tutorial Initialization
-        # Create a black background for the popup
+        
+        # Tutorial background
         cm = CardMaker('popupBackground')
-        cm.setFrame(-1, 1, -1, 1)  # Create a card covering the whole screen
+        cm.setFrame(-1, 1, -1, 1)
         self.popupBackground = aspect2d.attachNewNode(cm.generate())
-        self.popupBackground.setColor(0, 0, 0, 1)  # Set color to black
-        self.popupBackground.setScale(1.25, 1.25, 0.75)  # Adjust scale to cover the popup area
-        self.popupBackground.setPos(0, 0, 0)  # Position it to cover the popup area
+        self.popupBackground.setColor(0, 0, 0, 1)
+        self.popupBackground.setScale(1.25, 1.25, 0.75)
+        self.popupBackground.setPos(0, 0, 0)
         self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
         self.popupBackground.hide()
 
+        # Tutorial toggle button
         self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.1, pos=(0.8, 0, 0.8), command=self.togglePopup)
         
-        # Initialize page index
+        # Text for each page
         self.currentPage = 0
-        
-        # Create text for each page
         self.pages = [
             "Welcome to Bomb Goes Boom! This is a cooperative, 2-player game designed to foster teamwork!",
             "Before continuing, make sure that the manual player has the bomb defusal manual open.",
@@ -120,15 +120,15 @@ class BombApp(ShowBase):
             "To SWITCH BETWEEN GAMES, rotate the bomb to a different side. Doing this will also rotate the GUI to the corresponding side.",
         ]
         
-        # Create a text node that displays main popup content
+        # Main tutorial text node
         self.popupTextNode = TextNode('popupTextNode')
-        self.popupTextNode.setWordwrap(35)  # Set word wrap to fit text within a certain width
-        self.popupTextNode.setAlign(TextNode.ACenter)  # Center align the text
+        self.popupTextNode.setWordwrap(35)
+        self.popupTextNode.setAlign(TextNode.ACenter)
         self.popupTextNodePath = aspect2d.attachNewNode(self.popupTextNode)
-        self.popupTextNodePath.setScale(0.07)  # Adjusted scale to fit text on screen
-        self.popupTextNodePath.setPos(0, 0, -0.4)  # Center the text horizontally and position towards the bottom
+        self.popupTextNodePath.setScale(0.07)
+        self.popupTextNodePath.setPos(0, 0, -0.4)
         
-        # Create buttons for navigation
+        # Navigation buttons
         self.prevButton = DirectButton(text=("Prev", "Prev", "Prev", "Prev"), scale=0.05,
                                        pos=(-0.3, 0, -0.7), command=self.prevPage)
         self.prevButton.setTransparency(True)
@@ -137,19 +137,19 @@ class BombApp(ShowBase):
                                        pos=(0.3, 0, -0.7), command=self.nextPage)
         self.nextButton.setTransparency(True)
 
-        # Text node that displays the current page number
+        # Tutorial page number display
         self.pageNumberNode = TextNode('pageNumberNode')
         self.pageNumberNode.setAlign(TextNode.ACenter)
         self.pageNumberNodePath = aspect2d.attachNewNode(self.pageNumberNode)
         self.pageNumberNodePath.setScale(0.07)
-        self.pageNumberNodePath.setPos(0, 0, -0.7)  # Center the page number horizontally and position it below the buttons
+        self.pageNumberNodePath.setPos(0, 0, -0.7)
 
-        # Single image for tutorial pages, initialized with a placeholder image
+        # Tutorial images
         self.tutorialImage1 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0, 0, 0.2), scale=(0.5, 1, 0.5))
         self.tutorialImage1.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage1.hide()
 
-        self.tutorialImage2 = OnscreenImage(image='tutorial_images/mario.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
+        self.tutorialImage2 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
 
