@@ -58,12 +58,12 @@ def ble_wires_decode(wires):
 def ble_sequence_decode(sequence):
     match sequence:
         case 1:
-            return Sequence.TOP_LEFT
-        case 2:
             return Sequence.TOP_RIGHT
-        case 3:
-            return Sequence.BOTTOM_LEFT
-        case 4:
+        case 2:
             return Sequence.BOTTOM_RIGHT
+        case 3:
+            return Sequence.TOP_LEFT
+        case 4:
+            return Sequence.BOTTOM_LEFT
         case _:
             return Sequence.NO_PRESS

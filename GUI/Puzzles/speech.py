@@ -43,9 +43,6 @@ def analyze_code(bytes):
     
 def init(app):
     global recognizer
-    global puzzle_bytes
-    global word
-    global bytes_hex_strs
     global status_nps
 
     def setup_light(color_str, color_vec):
@@ -74,6 +71,12 @@ def init(app):
     if not app.args.no_noise_calibration:
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source)
+
+    generate_puzzle()
+
+def generate_puzzle():
+    global bytes_hex_strs
+    global word
 
     # Generate the code
     puzzle_bytes, bytes_hex_strs = generate_code()

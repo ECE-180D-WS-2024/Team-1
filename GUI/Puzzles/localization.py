@@ -47,13 +47,10 @@ def generate_key(stages):
     return answer_key_local
 
 def init(app, color):
-    global stages
-    global curr_stage
-    global curr_sequence
-    global answer_key
+    global np_state
     global lower_limit
     global upper_limit
-    global np_state
+
 
     def setup_light(color_str, color_vec):
         ss_sphere_np = app.bomb.find(f"**/ss.{color_str}")
@@ -76,13 +73,25 @@ def init(app, color):
     np_state['b'] = (*ss_blue_nps, False)
     np_state['y'] = (*ss_yellow_nps, False)
 
+    lower_limit = np.array([color[0] - MARGIN_H, color[1] - MARGIN_S, color[2] - MARGIN_V])
+    upper_limit = np.array([color[0] + MARGIN_H, color[1] + MARGIN_S, color[2] + MARGIN_V])
+
+    generate_puzzle()
+    
+
+def generate_puzzle():
+    global stages
+    global curr_stage
+    global curr_sequence
+    global answer_key
+
+    if curr_sequence is not None:
+        curr_sequence.finish()
+
     # Generate game stages and solution key
     stages = generate_stages()
     curr_stage = 0
     answer_key = generate_key(stages)
-
-    lower_limit = np.array([color[0] - MARGIN_H, color[1] - MARGIN_S, color[2] - MARGIN_V])
-    upper_limit = np.array([color[0] + MARGIN_H, color[1] + MARGIN_S, color[2] + MARGIN_V])
 
     stage0_interval = __generate_stage_sequence(0)
     curr_sequence = Sequence(stage0_interval, Wait(1.5))
