@@ -21,6 +21,7 @@ X_ANGULAR_VELO_CHAR_UUID = "4de63bcd-e713-4e28-9392-3cc1d7efbabc"
 Y_ANGULAR_VELO_CHAR_UUID = "99c07d47-9018-489b-a937-0d911a61aa69"
 Z_ANGULAR_VELO_CHAR_UUID = "85c17e72-fb28-4883-9333-479b20fce5a7"
 
+BOMB_CHAR_UUID = "144a7cbf-41d7-4298-af88-96282cf1088f"
 
 ORIENTATION_CHAR_UUID = "ba90a02e-9acd-4f6b-8d2d-db52abdab1ab"
 SEQUENCE_CHAR_UUID = "2e1c9e14-a3d6-41d6-a484-114375527aa6"
@@ -89,11 +90,17 @@ async def mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset)
             if reset.value == 1:
                 await controller.activateHW()
                 reset.value = 0
-            orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
-            t.value = await controller.read_char(TIME_CHAR_UUID)
-            sequence.value = await controller.read_char(SEQUENCE_CHAR_UUID)
-            rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
-            wire.value = await controller.read_char(WIRE_CHAR_UUID)
+
+            payload = await controller.read_char(BOMB_CHAR_UUID)
+
+            payload_binary = "{0:020b}".format(payload)
+            orien_bin, wire_bin, seq_bin, rgb_bin, time_bin = payload_binary[:3], payload_binary[3:6], payload_binary[6:9], payload_binary[9:10], payload_binary[10:]
+            orientation.value = int(orien_bin, 2)
+            wire.value = int(wire_bin, 2)
+            sequence.value = int(seq_bin, 2)
+            rgb.value = int(rgb_bin, 2)
+            t.value = int(time_bin, 2)
+            
         await controller.disconnect()
 def runner(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset):
     asyncio.run(mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset))

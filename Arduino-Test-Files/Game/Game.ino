@@ -49,6 +49,9 @@ int rgb_rate = -1;
 BLEService ClockService("f8f9c2aa-6ac0-4e7e-9848-a4f4e8800f69"); // Send Clock Information
 BLEService GameService("c24660cb-48d0-4f69-af9a-72f3c8da7c94"); // Send Game Info
 BLEService PuzzleService("f853a97e-2fff-4dd4-b9a1-b69fe2c74e53"); // Send Puzzle Info
+
+BLEUnsignedIntCharacteristic BombCharacteristic("144a7cbf-41d7-4298-af88-96282cf1088f", BLERead | BLEWrite);
+
 BLEIntCharacteristic TimeCharacteristic("2e92fbab-6365-4ce6-aa19-9b1fe217888c", BLERead | BLEWrite);
 BLEIntCharacteristic StartCharacteristic("d1b05699-f934-43e3-ae5f-2510118995f7", BLERead | BLEWrite);
 BLEIntCharacteristic SequenceCharacteristic("2e1c9e14-a3d6-41d6-a484-114375527aa6", BLERead | BLEWrite);
@@ -59,7 +62,11 @@ BLEIntCharacteristic SpeechCharacteristic("068891ec-d3b6-4d8a-9572-d4292b02e729"
 BLEIntCharacteristic RgbPressedCharacteristic("b12b0137-a6a4-4e6c-b3a2-824e5827afda", BLERead | BLEWrite);
 BLEIntCharacteristic RgbCharacteristic("5976c24b-7bf4-493f-84d6-11c8ca71d899", BLERead | BLEWrite);
 
-
+unsigned int time = 0;
+unsigned int orientation = 5;
+unsigned int wire = 0;
+unsigned int sequence = 0;
+unsigned int rgb_pressed = 0;
 
 void setup() {
   pinMode(RED, OUTPUT);
@@ -109,8 +116,21 @@ void loop() {
     writeRGB();
     // Send time remaining to host
     if (central && central.connected()) {
-      TimeCharacteristic.writeValue((9 - idxArr[2]) * 60 + (9 - idxArr[1]) * 10 + (9 - idxArr[0]));
+      time = (9 - idxArr[2]) * 60 + (9 - idxArr[1]) * 10 + (9 - idxArr[0]);
     }
+
+    unsigned int payload = 0x0;
+    payload |= orientation;
+    payload <<= 3;
+    payload |= wire;
+    payload <<= 3;
+    payload |= sequence;
+    payload <<= 1;
+    payload |= rgb_pressed;
+    payload <<= 10;
+    payload |= time;
+    
+    BombCharacteristic.writeValue(payload);
 
     // Write current digit value
     for(int i = 0; i < 3; i++) {
@@ -198,6 +218,7 @@ void BleSetup() {
   GameService.addCharacteristic(SkipCharacteristic);
   GameService.addCharacteristic(SpeechCharacteristic);
   GameService.addCharacteristic(RgbCharacteristic);
+  PuzzleService.addCharacteristic(BombCharacteristic);
   PuzzleService.addCharacteristic(RgbPressedCharacteristic);
   PuzzleService.addCharacteristic(SequenceCharacteristic);
   PuzzleService.addCharacteristic(WireCharacteristic);
@@ -240,26 +261,26 @@ void ReadImu() {
 void ReadOrientation(float x_accel, float y_accel, float z_accel, float x_gyro, float y_gyro, float z_gyro) {
     if (z_accel > 0.8) {
       Serial.println("CLOCK");
-      OrientationCharacteristic.writeValue(0); // CLOCK activated
+      orientation = 0; // CLOCK activated
     }
     else if (x_accel > 0.8) {
       Serial.println("SPEECH");
-      OrientationCharacteristic.writeValue(1); // SPEECH activated
+      orientation = 1; // SPEECH activated
     }
     else if (x_accel < -0.8) {
       Serial.println("LOCALIZATION");
-      OrientationCharacteristic.writeValue(2); // LOCALIZATION activated
+      orientation = 2; // LOCALIZATION activated
     }
     else if (y_accel > 0.8) {
       Serial.println("SEQUENCING");
-      OrientationCharacteristic.writeValue(3); // SEQUENCING activated
+      orientation = 3; // SEQUENCING activated
     }
     else if (y_accel < -0.8) {
       Serial.println("WIRES");
-      OrientationCharacteristic.writeValue(4); // WIRES activated
+      orientation = 4; // WIRES activated
     }
     else {
-      OrientationCharacteristic.writeValue(-1); // UNRECOGNIZED orientation
+      orientation = 5; // UNRECOGNIZED orientation
     }
 }
 
@@ -270,56 +291,56 @@ void ReadTransmitter() {
     // Wire Cutting Data
     if (receivedData == '1') {
       Serial.println("Wire 1");
-      WireCharacteristic.writeValue(1);
+      wire = 1;
     }
     else if (receivedData == '2') {
       Serial.println("Wire 2");
-      WireCharacteristic.writeValue(2);
+      wire = 2;
     }
     else if (receivedData == '3') {
        Serial.println("Wire 3");
-       WireCharacteristic.writeValue(3);
+      wire = 3;
     }
     else if (receivedData == '4') {
        Serial.println("Wire 4");
-        WireCharacteristic.writeValue(4);
+      wire = 4;
     }
     else if (receivedData == '5') {
        Serial.println("Wire 5");
-       WireCharacteristic.writeValue(5);
+      wire = 5;
     }
     else if (receivedData == '6') {
        Serial.println("Wire 6");
-       WireCharacteristic.writeValue(6);
+      wire = 6;
     }
     else if (receivedData == '0') {
-       WireCharacteristic.writeValue(0);
+      wire = 0;
     }
     else if (receivedData == 'a') {
        Serial.println("Top Right");
-       SequenceCharacteristic.writeValue(1);
+       sequence = 1;
     }
     else if (receivedData == 'b') {
        Serial.println("Bottom Right");
-       SequenceCharacteristic.writeValue(2);
+       sequence = 2;
     }
     else if (receivedData == 'c') {
        Serial.println("Top Left");
-       SequenceCharacteristic.writeValue(3);
+       sequence = 3;
     }
     else if (receivedData == 'd') {
        Serial.println("Bottom Left");
-       SequenceCharacteristic.writeValue(4);
+       sequence = 4;
     }
     else if (receivedData == 'n') {
-       SequenceCharacteristic.writeValue(0);
+       sequence = 0;
     }
   }
 }
 
 void writeRGB() {
   if (digitalRead(RGB_ENABLE)) {
-      RgbPressedCharacteristic.writeValue(1);
+      rgb_pressed = 1;
       if (millis() - prevBlink >= FlashInterval[rgb_rate]) {
           if (flash_state && rgb_color == 0) {
             digitalWrite(RED, 1);
@@ -361,7 +382,7 @@ void writeRGB() {
       }
     }
   else {
-    RgbPressedCharacteristic.writeValue(0);
+    rgb_pressed = 0;
     digitalWrite(RED, 0);
     digitalWrite(GREEN, 0);
     digitalWrite(BLUE, 0);
