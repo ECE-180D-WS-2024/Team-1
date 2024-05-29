@@ -96,7 +96,8 @@ void setup() {
 
 void loop() { 
   BLEDevice central = BLE.central();
-
+  ReadTransmitter();
+  
   if (central && central.connected()) {
     // Wait for start signal from host
     if (StartCharacteristic.written() && StartCharacteristic.value()) {
@@ -267,7 +268,7 @@ void ReadOrientation(float x_accel, float y_accel, float z_accel, float x_gyro, 
       Serial.println("SPEECH");
       orientation = 1; // SPEECH activated
     }
-    else if (x_accel < -0.8) {
+    else if (z_accel < -0.8) {
       Serial.println("LOCALIZATION");
       orientation = 2; // LOCALIZATION activated
     }
