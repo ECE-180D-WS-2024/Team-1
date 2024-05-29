@@ -3,7 +3,7 @@ from panda3d.core import TextNode, TransparencyAttrib
 from direct.gui.DirectButton import DirectButton
 from direct.gui.OnscreenImage import OnscreenImage
 
-class MyApp(ShowBase):
+class Tutorial(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
 
@@ -144,5 +144,5 @@ class MyApp(ShowBase):
         self.popupVisible = False
         self.popupButton["text"] = "Show Tutorial"
 
-app = MyApp()
+app = Tutorial()
 app.run()
