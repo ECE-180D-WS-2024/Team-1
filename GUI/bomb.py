@@ -1,4 +1,5 @@
 import sys
+import asyncio
 from argparse import ArgumentParser, Namespace
 
 from puzzles import localization, wires, sequence, speech, hold, Puzzle
@@ -13,6 +14,9 @@ import util.event as event
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from direct.gui.OnscreenImage import OnscreenImage
+from direct.gui.DirectDialog import DirectDialog
+from direct.gui.DirectLabel import DirectLabel
+from direct.gui.DirectButton import DirectButton
 from direct.stdpy.threading import Condition
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath
@@ -35,6 +39,7 @@ class BombApp(ShowBase):
 
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
+        self.sound_explode = self.loader.loadSfx("assets/sound/explode.mp3")
 
         self.font_ssd = self.loader.loadFont("assets/font/dseg7.ttf")
         self.font_ssd.setPixelsPerUnit(60)
@@ -49,7 +54,6 @@ class BombApp(ShowBase):
                                  pos = (-1.275 + i*0.11, 0, 0.95),
                                  scale = 0.04)
             icon.setTransparency(True)
-            icon.hide()
             self.mistake_icons.append(icon)
 
         # Setup scene
@@ -64,6 +68,8 @@ class BombApp(ShowBase):
         self.spotlight_np.lookAt(self.bomb)
         self.render.setLight(self.spotlight_np)
         self.render.setShaderAuto()
+
+        self.__setup_game_over()
 
         # Setup post-processed components
         self.__setup_timer()
@@ -85,11 +91,30 @@ class BombApp(ShowBase):
         ble.spawn(self, rgb_encoding)
 
         self.__setup_controls()
+        self.start_game()
 
     def finalizeExit(self):
         self.running = False
         sys.exit()
 
+    def __setup_game_over(self):
+        self.death_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7),
+                                         fadeScreen=1)
+        self.death_dialog_title = DirectLabel(text="BOOOOOM!",
+                                              scale=0.15,
+                                              pos = (0, 0, 0.4),
+                                              parent=self.death_dialog)
+        self.death_dialog_subtitle = DirectLabel(text="You lose!",
+                                              scale=0.1,
+                                              pos = (0, 0, 0),
+                                              parent=self.death_dialog)
+        self.death_dialog_reset_btn = DirectButton(text="Play again",
+                                                   scale=0.05,
+                                                   pos = (0, 0, -0.4),
+                                                   parent=self.death_dialog,
+                                                   command=self.start_game,
+                                                   frameSize=(-4, 4, -1, 1))
+        
     def __setup_timer(self):
         timer_node = self.bomb.find("**/timer")
         self.timer_text_node = TextNode(name="timer_text")
@@ -116,9 +141,6 @@ class BombApp(ShowBase):
         timer_light_node.setColor((0, 255, 0, 0))
         self.timer_light_np = self.timer_sphere_np.attachNewNode(timer_light_node)
         self.timer_light_np.setPos(0, 0, 0.5)
-
-        self.task_blink_colon = self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
-        self.task_blink_timer_light = self.taskMgr.add(self.blink_timer_light, "blink_light", delay=1)
 
     def __setup_num_displays(self):
         def setup_num_display(disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
@@ -154,9 +176,10 @@ class BombApp(ShowBase):
         self.num_texts = [seq_num_text, wire_num_text, ss_num_text, hold_num_text]
 
     def handle_mistake(self):
-        self.mistake_icons[self.mistakes].show()
-        self.mistakes += 1
-        self.mistakes_lock.notify_all()
+        if self.mistakes < 3:
+            self.mistake_icons[self.mistakes].show()
+            self.mistakes += 1
+            self.mistakes_lock.notify_all()
         if self.mistakes == 3:
             self.explode_bomb()
 
@@ -233,8 +256,26 @@ class BombApp(ShowBase):
             task.delayTime = 0.5
         return task.again
     
+    def start_game(self):
+        self.death_dialog.hide()
+        self.running = True
+        self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
+        self.taskMgr.add(self.blink_timer_light, "blink_light", delay=1)
+        self.mistakes = 0
+        self.solved_puzzles = set()
+        for icon in self.mistake_icons:
+            icon.hide()
+
+        wires.generate_puzzle(self)
+        sequence.generate_puzzle()
+        localization.generate_puzzle()
+        self.messenger.send('hw_reset')
+
     def explode_bomb(self):
-        self.finalizeExit()
+        self.sound_explode.play()
+        self.taskMgr.remove("blink_colon")
+        self.taskMgr.remove("blink_light")
+        self.death_dialog.show()
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")

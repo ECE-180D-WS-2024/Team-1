@@ -26,14 +26,7 @@ def __get_correct_wire(wires, L):
         return 4  # Otherwise, cut the fourth wire
     
 def init(app):
-    global wire_cut
-    global correct_wire
-    wires = random.choices(COLORS, k=6)
-    rand_num = random.randint(1, 9)
-    correct_wire = __get_correct_wire(wires, rand_num)
-    
-    app.num_texts[int(Puzzle.WIRES)].setText(str(rand_num).zfill(2))
-
+    global material_dict 
     materials = app.bomb.findAllMaterials('wire.*')
     material_dict = {
         'r': materials.findMaterial('wire.red'),
@@ -45,6 +38,17 @@ def init(app):
         'k': materials.findMaterial('wire.black')
     }
 
+    generate_puzzle(app)
+
+def generate_puzzle(app):
+    global wire_cut
+    global correct_wire
+    wires = random.choices(COLORS, k=6)
+    rand_num = random.randint(1, 9)
+    correct_wire = __get_correct_wire(wires, rand_num)
+    
+    app.num_texts[int(Puzzle.WIRES)].setText(str(rand_num).zfill(2))
+
     for i in range(6):
         top_np = app.bomb.find(f'**/wire{i}.top')
         bot_np = app.bomb.find(f'**/wire{i}.bottom')
@@ -53,6 +57,11 @@ def init(app):
         material = material_dict[wire_color]
         top_np.setMaterial(material, 1)
         bot_np.setMaterial(material, 1)
+
+        _, p, r = top_np.getHpr()
+        top_np.setHpr(-91.78852081298828, p, r)
+    
+    wire_cut = [False] * 6
 
 def focus(app):
     app.bomb.hprInterval(0.25, (-90, 0, 0)).start()

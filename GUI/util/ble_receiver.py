@@ -33,6 +33,7 @@ RGB_CHAR_UUID = "5976c24b-7bf4-493f-84d6-11c8ca71d899"
 RGB_PRESSED_CHAR_UUID = "b12b0137-a6a4-4e6c-b3a2-824e5827afda"
 
 WINDOW_WIDTH = 10
+
 class Axis(Enum):
     X = auto()
     Y = auto()
@@ -77,24 +78,25 @@ class BLEController():
         await self.client.write_gatt_char(RGB_CHAR_UUID, bytearray([encode_rgb]))
 
 
-async def mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding):
+async def mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset):
     controller = BLEController()
 
     if await controller.connect():
-        await controller.activateHW()
         await controller.configRGB(rgb_encoding)
         while True:
             if not app.running:
                 break
+            if reset.value == 1:
+                await controller.activateHW()
+                reset.value = 0
             orientation.value = await controller.read_char(ORIENTATION_CHAR_UUID)
             t.value = await controller.read_char(TIME_CHAR_UUID)
             sequence.value = await controller.read_char(SEQUENCE_CHAR_UUID)
-            wire.value = await controller.read_char(WIRE_CHAR_UUID)
             rgb.value = await controller.read_char(RGB_PRESSED_CHAR_UUID)
+            wire.value = await controller.read_char(WIRE_CHAR_UUID)
         await controller.disconnect()
-
-def runner(app, orientation, t, sequence, wire, rgb, rgb_encoding):
-    asyncio.run(mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding))
+def runner(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset):
+    asyncio.run(mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset))
 
 """
     Allocates memory and begins the communications loop
@@ -105,6 +107,7 @@ def spawn(app, rgb_encoding):
     seq = Value('i', 0) # Use to get Sequence Selection
     wire = Value('i', 0) # Use to get Wire Selection
     rgb = Value('i', 0)
+    reset = Value('i', 0) # Used to flag a reset condition
 
     state_dict = {
         'orientation': Orientation.OTHER,
@@ -117,8 +120,13 @@ def spawn(app, rgb_encoding):
     app.taskMgr.setupTaskChain('message_bus', numThreads=1)
     app.taskMgr.setupTaskChain('ble_receiver', numThreads=1)
 
+    app.accept('hw_reset', hw_reset, extraArgs=[reset])
+
     app.taskMgr.add(task_check_data, extraArgs=[app, state_dict, orientation, time, seq, wire, rgb], appendTask=True, taskChain='message_bus')
-    app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb, rgb_encoding], taskChain='ble_receiver')
+    app.taskMgr.add(runner, extraArgs=[app, orientation, time, seq, wire, rgb, rgb_encoding, reset], taskChain='ble_receiver')
+
+def hw_reset(reset):
+    reset.value = 1
 
 def poll_button_and_handle_message(messenger, state_dict, key, ble_value, decode_fn):
     if ble_value.value != 0:

@@ -21,16 +21,14 @@ randomized_ordering = []
 row_n = -1
 btn_depressed = [False] * 4
 
+btn_texts = []
+
 def __get_btn_np(bomb_np: NodePath, btn_coord: Tuple[int, int]) -> NodePath:
     i, j = btn_coord
     return bomb_np.find(f'**/seq.btn{i}{j}')
 
-def __render_btn_symbol(bomb_np: NodePath, btn_coord: Tuple[int, int], symbol: str):
-    text = TextNode(name=f'seq_btn{btn_coord[0]}{btn_coord[1]}')
-    text.setText(symbol)
-    text.setTextScale(0.75)
-    text.setTextColor(0, 0, 0, 1)
 
+def __render_btn_symbol(bomb_np: NodePath, btn_coord: Tuple[int, int], text):
     btn_np = __get_btn_np(bomb_np, btn_coord)
     text_np = btn_np.attachNewNode(text)
     text_np.setPos(0.2, 1.1, -0.1)
@@ -41,6 +39,17 @@ def __btn_coord_to_arr_idx(btn_coord: Tuple[int, int]) -> int:
     return (i * 2) + j
 
 def init(app):
+    coords = {(0,0), (0,1), (1,0), (1,1)}
+    for coord in coords:
+        text = TextNode(name=f'seq_btn{coord[0]}{coord[1]}')
+        text.setTextScale(0.75)
+        text.setTextColor(0, 0, 0, 1)
+        btn_texts.append(text)
+        __render_btn_symbol(app.bomb, coord, text)
+
+    generate_puzzle()
+
+def generate_puzzle():
     global key
     global randomized_ordering
     global row_n
@@ -55,10 +64,10 @@ def init(app):
     # then putting them in reverse order according to their original position in the manual's row
     key = list(sorted(filter(lambda x: x in randomized_ordering, MANUAL[row_n]), key=lambda x: MANUAL[row_n].index(x), reverse=True))
 
-    __render_btn_symbol(app.bomb, (0, 0), randomized_ordering[0])
-    __render_btn_symbol(app.bomb, (0, 1), randomized_ordering[1])
-    __render_btn_symbol(app.bomb, (1, 0), randomized_ordering[2])
-    __render_btn_symbol(app.bomb, (1, 1), randomized_ordering[3])
+    for i, ch in enumerate(randomized_ordering):
+        btn_text = btn_texts[i]
+        btn_text.setText(ch)
+    
 
 def focus(app):
     app.bomb.hprInterval(0.25, (180, 0, 0)).start()
