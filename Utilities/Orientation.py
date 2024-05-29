@@ -6,4 +6,4 @@ class Orientation(Enum):
     LOCALIZATION = 2
     SEQUENCING = 3
     WIRES = 4
-    OTHER = -1
+    OTHER = 5
