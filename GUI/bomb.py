@@ -7,6 +7,7 @@ import util.ble_receiver as ble
 from util.Orientation import Orientation
 from util.Sequence import Sequence
 from util.RGB import RGB
+from util.Wires import Wire
 import util.event as event
 
 from direct.showbase.ShowBase import ShowBase
@@ -189,8 +190,15 @@ class BombApp(ShowBase):
         self.accept(event.encode('rgb', RGB.PRESSED), hold.push_button, extraArgs=[self])
         self.accept(event.encode('rgb', RGB.NOT_PRESSED), hold.release_button, extraArgs=[self])
 
-        for i in range(7):
-            self.accept(event.encode('wires', i), wires.cut_wire, extraArgs=[self, i])
+        self.accept(event.encode('wire', Wire.WIRE_1), wires.cut_wire, extraArgs=[self, 1])
+        self.accept(event.encode('wire', Wire.WIRE_2), wires.cut_wire, extraArgs=[self, 2])
+        self.accept(event.encode('wire', Wire.WIRE_3), wires.cut_wire, extraArgs=[self, 3])
+        self.accept(event.encode('wire', Wire.WIRE_4), wires.cut_wire, extraArgs=[self, 4])
+        self.accept(event.encode('wire', Wire.WIRE_5), wires.cut_wire, extraArgs=[self, 5])
+        self.accept(event.encode('wire', Wire.WIRE_6), wires.cut_wire, extraArgs=[self, 6])
+
+        for i in range(1, 7):
+            self.accept(f'{i}', wires.cut_wire, extraArgs=[self, i])
 
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
