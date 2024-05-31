@@ -1,6 +1,7 @@
 import sys
 import asyncio
 from argparse import ArgumentParser, Namespace
+import os
 
 from puzzles import localization, wires, sequence, speech, hold, Puzzle
 from util.color_calibration import calibrate
@@ -21,7 +22,7 @@ from direct.stdpy.threading import Condition
 from direct.gui.DirectButton import DirectButton
 from direct.gui.OnscreenImage import OnscreenImage
 
-from panda3d.core import TextNode, PointLight, Spotlight, NodePath, TransparencyAttrib, CardMaker
+from panda3d.core import TextNode, PointLight, Spotlight, NodePath, TransparencyAttrib, CardMaker, MovieTexture
 
 class BombApp(ShowBase):
     def __init__(self, args: Namespace):
@@ -105,7 +106,13 @@ class BombApp(ShowBase):
         self.popupBackground.setScale(1.25, 1.25, 0.75)
         self.popupBackground.setPos(0, 0, 0)
         self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
-        self.popupBackground.hide()
+
+        # Ensure popupBackground is a proper 2D node
+        #self.popupBackground = NodePath("popupBackground")
+        #self.popupBackground.setScale(1.25, 1.25, 0.75)
+        #self.popupBackground.setPos(0, 0, 0)
+        #self.popupBackground.reparentTo(aspect2d)
+        #self.popupBackground.hide()
 
         # Tutorial toggle button
         self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.1, pos=(0.8, 0, 0.8), command=self.togglePopup)
@@ -161,8 +168,12 @@ class BombApp(ShowBase):
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
 
+        # Tutorial videos
+        self.tutorial_video_texture = None
+        self.tutorial_video_card = None
+
         self.popupVisible = False
-        self.hidePopup() 
+        self.hidePopup()
 
     def finalizeExit(self):
         self.running = False
@@ -361,9 +372,13 @@ class BombApp(ShowBase):
             self.tutorialImage1.setPos(0, 0, 0.2)  # Center the image
             self.tutorialImage1.show()
             self.tutorialImage2.hide()
+        elif self.currentPage == 12:
+            self.tutorialImage1.hide()
+            self.tutorialImage2.hide()
+            self.playTutorialVideo('tutorial_videos/bomb_rotation.mp4')
         else:
             self.tutorialImage1.setPos(-0.5, 0, 0.2)  # Move to the left
-            if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11 or self.currentPage == 12:
+            if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
                 self.tutorialImage1.setImage('tutorial_images/bomb_arduino1.png')
                 self.tutorialImage2.setImage('tutorial_images/gui_timer.png')
             elif self.currentPage == 4:
@@ -384,6 +399,7 @@ class BombApp(ShowBase):
                                     
             self.tutorialImage1.show()
             self.tutorialImage2.show()
+            self.stopTutorialVideo()
 
         self.updatePageNumber()
         
@@ -427,8 +443,47 @@ class BombApp(ShowBase):
         self.pageNumberNodePath.hide()
         self.tutorialImage1.hide()
         self.tutorialImage2.hide()
+        self.stopTutorialVideo()
         self.popupVisible = False
         self.popupButton["text"] = "Show Tutorial"
+    
+    # Method to play the tutorial video
+    def playTutorialVideo(self, video_path):
+        self.stopTutorialVideo()  # Stop any currently playing video
+
+        # Load the movie texture
+        self.tutorial_video_texture = MovieTexture("tutorial_video")
+        success = self.tutorial_video_texture.read(video_path)
+
+        if not success:
+            print(f"Failed to load video: {video_path}")
+            return
+
+        print(f"Video loaded successfully: {video_path}")
+        
+        # Ensure video is in a compatible format
+        print(f"Video format: {self.tutorial_video_texture.getXSize()}x{self.tutorial_video_texture.getYSize()}, {self.tutorial_video_texture.getNumComponents()} components")
+
+        # Create a card to display the video
+        cm = CardMaker('videoCard')
+        cm.setFrame(-0.75, 0.75, -0.75, 0.75)
+        self.tutorial_video_card = aspect2d.attachNewNode(cm.generate())
+        self.tutorial_video_card.setTexture(self.tutorial_video_texture)
+        self.tutorial_video_card.setPos(0.2, 0, 0.2)
+        self.tutorial_video_card.setScale(0.69, 0.69, 0.69)
+        self.tutorial_video_card.setTransparency(TransparencyAttrib.MAlpha)
+
+        self.tutorial_video_texture.setLoop(True)
+        self.tutorial_video_texture.play()
+
+    # Method to stop the tutorial video
+    def stopTutorialVideo(self):
+        if self.tutorial_video_texture:
+            self.tutorial_video_texture.stop()
+        if self.tutorial_video_card:
+            self.tutorial_video_card.removeNode()
+        self.tutorial_video_texture = None
+        self.tutorial_video_card = None
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")
