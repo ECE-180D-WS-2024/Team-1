@@ -363,9 +363,10 @@ class BombApp(ShowBase):
         self.nextButton.show() if self.currentPage < len(self.pages) - 1 else self.nextButton.hide()
 
         if self.currentPage < 3:
-            self.tutorialImage1.setImage('tutorial_images/bomb.png')
-            self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb.png', self.max_image_width, self.max_image_height)
+            image_path1 = 'tutorial_images/bomb.png'
+            self.tutorialImage1.setImage(image_path1)
             self.tutorialImage1.setPos(0, 0, 0.2)
+            self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
             self.tutorialImage1.show()
             self.tutorialImage2.hide()
         elif self.currentPage == 12:
@@ -374,37 +375,35 @@ class BombApp(ShowBase):
             self.playTutorialVideo('tutorial_videos/bomb_rotation.mp4')
         else:
             self.tutorialImage1.setPos(-0.5, 0, 0.2)
+            image_path1 = ""
+            image_path2 = ""
+
             if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
-                self.tutorialImage1.setImage('tutorial_images/bomb_arduino1.png')
-                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_arduino1.png', self.max_image_width, self.max_image_height)
-                self.tutorialImage2.setImage('tutorial_images/gui_timer.png')
-                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_timer.png', self.max_image_width, self.max_image_height)
+                image_path1 = 'tutorial_images/bomb_arduino1.png'
+                image_path2 = 'tutorial_images/gui_timer.png'
             elif self.currentPage == 4:
-                self.tutorialImage1.setImage('tutorial_images/bomb_start_button.png')
-                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_start_button.png', self.max_image_width, self.max_image_height)
-                self.tutorialImage2.setImage('tutorial_images/gui_timer.png')
-                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_timer.png', self.max_image_width, self.max_image_height)
+                image_path1 = 'tutorial_images/bomb_start_button.png'
+                image_path2 = 'tutorial_images/gui_timer.png'
             elif self.currentPage == 6:
-                self.tutorialImage1.setImage('tutorial_images/bomb_wires.png')
-                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_wires.png', self.max_image_width, self.max_image_height)
-                self.tutorialImage2.setImage('tutorial_images/gui_wires.png')
-                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_wires.png', self.max_image_width, self.max_image_height)
+                image_path1 = 'tutorial_images/bomb_wires.png'
+                image_path2 = 'tutorial_images/gui_wires.png'
             elif self.currentPage == 7:
-                self.tutorialImage1.setImage('tutorial_images/bomb_sequence.png')
-                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_sequence.png', self.max_image_width, self.max_image_height)
-                self.tutorialImage2.setImage('tutorial_images/gui_sequence.png')
-                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_sequence.png', self.max_image_width, self.max_image_height)
+                image_path1 = 'tutorial_images/bomb_sequence.png'
+                image_path2 = 'tutorial_images/gui_sequence.png'
             elif self.currentPage == 8:
-                self.tutorialImage1.setImage('tutorial_images/bomb_localization.png')
-                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_localization.png', self.max_image_width, self.max_image_height)
-                self.tutorialImage2.setImage('tutorial_images/gui_localization.png')
-                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_localization.png', self.max_image_width, self.max_image_height)
+                image_path1 = 'tutorial_images/bomb_localization.png'
+                image_path2 = 'tutorial_images/gui_localization.png'
             elif self.currentPage == 9:
-                self.tutorialImage1.setImage('tutorial_images/bomb_speech.png')
-                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_speech.png', self.max_image_width, self.max_image_height)
-                self.tutorialImage2.setImage('tutorial_images/gui_speech.png')
-                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_speech.png', self.max_image_width, self.max_image_height)
-                                        
+                image_path1 = 'tutorial_images/bomb_speech.png'
+                image_path2 = 'tutorial_images/gui_speech.png'
+
+            if image_path1:
+                self.tutorialImage1.setImage(image_path1)
+                self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
+            if image_path2:
+                self.tutorialImage2.setImage(image_path2)
+                self.adjust_image_aspect(self.tutorialImage2, image_path2, self.max_image_width, self.max_image_height)
+
             self.tutorialImage1.show()
             self.tutorialImage2.show()
             self.stopTutorialVideo()
