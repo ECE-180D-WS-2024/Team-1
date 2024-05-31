@@ -23,6 +23,7 @@ from direct.gui.DirectButton import DirectButton
 from direct.gui.OnscreenImage import OnscreenImage
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath, TransparencyAttrib, CardMaker, MovieTexture
+from PIL import Image
 
 class BombApp(ShowBase):
     def __init__(self, args: Namespace):
@@ -158,6 +159,9 @@ class BombApp(ShowBase):
         self.tutorialImage2 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
+
+        self.max_image_width = 0.5
+        self.max_image_height = 0.5
 
         # Tutorial videos
         self.tutorial_video_texture = None
@@ -351,16 +355,17 @@ class BombApp(ShowBase):
         self.death_dialog.show()
     
     # Tutorial methods
+    #
+    # Updates content at each page of tutorial
     def updateText(self):
-        # Set text based on current page
         self.popupTextNode.setText(self.pages[self.currentPage])
-        # Show or hide buttons based on current page
         self.prevButton.show() if self.currentPage > 0 else self.prevButton.hide()
         self.nextButton.show() if self.currentPage < len(self.pages) - 1 else self.nextButton.hide()
-        # Set image based on current page
+
         if self.currentPage < 3:
             self.tutorialImage1.setImage('tutorial_images/bomb.png')
-            self.tutorialImage1.setPos(0, 0, 0.2)  # Center the image
+            self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb.png', self.max_image_width, self.max_image_height)
+            self.tutorialImage1.setPos(0, 0, 0.2)
             self.tutorialImage1.show()
             self.tutorialImage2.hide()
         elif self.currentPage == 12:
@@ -368,26 +373,38 @@ class BombApp(ShowBase):
             self.tutorialImage2.hide()
             self.playTutorialVideo('tutorial_videos/bomb_rotation.mp4')
         else:
-            self.tutorialImage1.setPos(-0.5, 0, 0.2)  # Move to the left
+            self.tutorialImage1.setPos(-0.5, 0, 0.2)
             if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
                 self.tutorialImage1.setImage('tutorial_images/bomb_arduino1.png')
+                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_arduino1.png', self.max_image_width, self.max_image_height)
                 self.tutorialImage2.setImage('tutorial_images/gui_timer.png')
+                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_timer.png', self.max_image_width, self.max_image_height)
             elif self.currentPage == 4:
                 self.tutorialImage1.setImage('tutorial_images/bomb_start_button.png')
+                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_start_button.png', self.max_image_width, self.max_image_height)
                 self.tutorialImage2.setImage('tutorial_images/gui_timer.png')
+                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_timer.png', self.max_image_width, self.max_image_height)
             elif self.currentPage == 6:
                 self.tutorialImage1.setImage('tutorial_images/bomb_wires.png')
+                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_wires.png', self.max_image_width, self.max_image_height)
                 self.tutorialImage2.setImage('tutorial_images/gui_wires.png')
+                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_wires.png', self.max_image_width, self.max_image_height)
             elif self.currentPage == 7:
                 self.tutorialImage1.setImage('tutorial_images/bomb_sequence.png')
+                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_sequence.png', self.max_image_width, self.max_image_height)
                 self.tutorialImage2.setImage('tutorial_images/gui_sequence.png')
+                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_sequence.png', self.max_image_width, self.max_image_height)
             elif self.currentPage == 8:
                 self.tutorialImage1.setImage('tutorial_images/bomb_localization.png')
+                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_localization.png', self.max_image_width, self.max_image_height)
                 self.tutorialImage2.setImage('tutorial_images/gui_localization.png')
+                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_localization.png', self.max_image_width, self.max_image_height)
             elif self.currentPage == 9:
                 self.tutorialImage1.setImage('tutorial_images/bomb_speech.png')
+                self.adjust_image_aspect(self.tutorialImage1, 'tutorial_images/bomb_speech.png', self.max_image_width, self.max_image_height)
                 self.tutorialImage2.setImage('tutorial_images/gui_speech.png')
-                                    
+                self.adjust_image_aspect(self.tutorialImage2, 'tutorial_images/gui_speech.png', self.max_image_width, self.max_image_height)
+                                        
             self.tutorialImage1.show()
             self.tutorialImage2.show()
             self.stopTutorialVideo()
@@ -474,6 +491,26 @@ class BombApp(ShowBase):
             self.tutorial_video_card.removeNode()
         self.tutorial_video_texture = None
         self.tutorial_video_card = None
+
+    # Method to adjust image aspect ratios
+    def adjust_image_aspect(self, image_node: OnscreenImage, image_path: str, max_width: float, max_height: float):
+        # Load the image using PIL to get its dimensions
+        with Image.open(image_path) as img:
+            width, height = img.size
+        
+        # Calculate the aspect ratio
+        aspect_ratio = width / height
+
+        # Determine the scale factors
+        if width > height:
+            scale_x = max_width
+            scale_y = max_width / aspect_ratio
+        else:
+            scale_x = max_height * aspect_ratio
+            scale_y = max_height
+        
+        # Apply the scale to the image node
+        image_node.setScale(scale_x, 1, scale_y)
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")
