@@ -97,8 +97,6 @@ class BombApp(ShowBase):
         self.start_game()
 
         # Tutorial Initialization
-        
-        # Tutorial background
         cm = CardMaker('popupBackground')
         cm.setFrame(-1, 1, -1, 1)
         self.popupBackground = aspect2d.attachNewNode(cm.generate())
@@ -106,13 +104,6 @@ class BombApp(ShowBase):
         self.popupBackground.setScale(1.25, 1.25, 0.75)
         self.popupBackground.setPos(0, 0, 0)
         self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
-
-        # Ensure popupBackground is a proper 2D node
-        #self.popupBackground = NodePath("popupBackground")
-        #self.popupBackground.setScale(1.25, 1.25, 0.75)
-        #self.popupBackground.setPos(0, 0, 0)
-        #self.popupBackground.reparentTo(aspect2d)
-        #self.popupBackground.hide()
 
         # Tutorial toggle button
         self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.1, pos=(0.8, 0, 0.8), command=self.togglePopup)
@@ -464,7 +455,6 @@ class BombApp(ShowBase):
         # Ensure video is in a compatible format
         print(f"Video format: {self.tutorial_video_texture.getXSize()}x{self.tutorial_video_texture.getYSize()}, {self.tutorial_video_texture.getNumComponents()} components")
 
-        # Create a card to display the video
         cm = CardMaker('videoCard')
         cm.setFrame(-0.75, 0.75, -0.75, 0.75)
         self.tutorial_video_card = aspect2d.attachNewNode(cm.generate())
