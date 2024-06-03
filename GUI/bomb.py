@@ -107,7 +107,7 @@ class BombApp(ShowBase):
         self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
 
         # Tutorial toggle button
-        self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.1, pos=(0.8, 0, 0.8), command=self.togglePopup)
+        self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.075, pos=(1, 0, 0.8), command=self.togglePopup)
         
         # Text for each page
         self.currentPage = 0
@@ -152,11 +152,11 @@ class BombApp(ShowBase):
         self.pageNumberNodePath.setPos(0, 0, -0.7)
 
         # Tutorial images
-        self.tutorialImage1 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0, 0, 0.2), scale=(0.5, 1, 0.5))
+        self.tutorialImage1 = OnscreenImage(image='assets/images/bomb.png', pos=(0, 0, 0.2), scale=(0.5, 1, 0.5))
         self.tutorialImage1.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage1.hide()
 
-        self.tutorialImage2 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
+        self.tutorialImage2 = OnscreenImage(image='assets/images/bomb.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
 
@@ -363,7 +363,7 @@ class BombApp(ShowBase):
         self.nextButton.show() if self.currentPage < len(self.pages) - 1 else self.nextButton.hide()
 
         if self.currentPage < 3:
-            image_path1 = 'tutorial_images/bomb.png'
+            image_path1 = 'assets/images/bomb.png'
             self.tutorialImage1.setImage(image_path1)
             self.tutorialImage1.setPos(0, 0, 0.2)
             self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
@@ -372,30 +372,30 @@ class BombApp(ShowBase):
         elif self.currentPage == 12:
             self.tutorialImage1.hide()
             self.tutorialImage2.hide()
-            self.playTutorialVideo('tutorial_videos/bomb_rotation.mp4')
+            self.playTutorialVideo('assets/videos/bomb_rotation.mp4')
         else:
             self.tutorialImage1.setPos(-0.5, 0, 0.2)
             image_path1 = ""
             image_path2 = ""
 
             if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
-                image_path1 = 'tutorial_images/bomb_arduino1.png'
-                image_path2 = 'tutorial_images/gui_timer.png'
+                image_path1 = 'assets/images/bomb_arduino1.png'
+                image_path2 = 'assets/images/gui_timer.png'
             elif self.currentPage == 4:
-                image_path1 = 'tutorial_images/bomb_start_button.png'
-                image_path2 = 'tutorial_images/gui_timer.png'
+                image_path1 = 'assets/images/bomb_start_button.png'
+                image_path2 = 'assets/images/gui_timer.png'
             elif self.currentPage == 6:
-                image_path1 = 'tutorial_images/bomb_wires.png'
-                image_path2 = 'tutorial_images/gui_wires.png'
+                image_path1 = 'assets/images/bomb_wires.png'
+                image_path2 = 'assets/images/gui_wires.png'
             elif self.currentPage == 7:
-                image_path1 = 'tutorial_images/bomb_sequence.png'
-                image_path2 = 'tutorial_images/gui_sequence.png'
+                image_path1 = 'assets/images/bomb_sequence.png'
+                image_path2 = 'assets/images/gui_sequence.png'
             elif self.currentPage == 8:
-                image_path1 = 'tutorial_images/bomb_localization.png'
-                image_path2 = 'tutorial_images/gui_localization.png'
+                image_path1 = 'assets/images/bomb_localization.png'
+                image_path2 = 'assets/images/gui_localization.png'
             elif self.currentPage == 9:
-                image_path1 = 'tutorial_images/bomb_speech.png'
-                image_path2 = 'tutorial_images/gui_speech.png'
+                image_path1 = 'assets/images/bomb_speech.png'
+                image_path2 = 'assets/images/gui_speech.png'
 
             if image_path1:
                 self.tutorialImage1.setImage(image_path1)
