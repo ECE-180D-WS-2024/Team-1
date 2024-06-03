@@ -1,6 +1,7 @@
 import sys
 import asyncio
 from argparse import ArgumentParser, Namespace
+import os
 
 from puzzles import localization, wires, sequence, speech, hold, Puzzle
 from util.color_calibration import calibrate
@@ -18,8 +19,11 @@ from direct.gui.DirectDialog import DirectDialog
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectButton import DirectButton
 from direct.stdpy.threading import Condition
+from direct.gui.DirectButton import DirectButton
+from direct.gui.OnscreenImage import OnscreenImage
 
-from panda3d.core import TextNode, PointLight, Spotlight, NodePath
+from panda3d.core import TextNode, PointLight, Spotlight, NodePath, TransparencyAttrib, CardMaker, MovieTexture
+from PIL import Image
 
 class BombApp(ShowBase):
     def __init__(self, args: Namespace):
@@ -90,8 +94,81 @@ class BombApp(ShowBase):
         #   other thread is used to pass messages to the message bus
         ble.spawn(self, rgb_encoding)
 
-        self.__setup_controls()
+        self.__setup_controls() 
         self.start_game()
+
+        # Tutorial Initialization
+        cm = CardMaker('popupBackground')
+        cm.setFrame(-1, 1, -1, 1)
+        self.popupBackground = aspect2d.attachNewNode(cm.generate())
+        self.popupBackground.setColor(0, 0, 0, 1)
+        self.popupBackground.setScale(1.25, 1.25, 0.75)
+        self.popupBackground.setPos(0, 0, 0)
+        self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
+
+        # Tutorial toggle button
+        self.popupButton = DirectButton(text=("Show Tutorial"), scale=0.1, pos=(0.8, 0, 0.8), command=self.togglePopup)
+        
+        # Text for each page
+        self.currentPage = 0
+        self.pages = [
+            "Welcome to Bomb Goes Boom! This is a cooperative, 2-player game designed to foster teamwork!",
+            "Before continuing, make sure that the manual player has the bomb defusal manual open.",
+            "Now, we'll go through examples so that you, the defusal player, know how all the controls for our game.",
+            "Before starting the game, place the bomb upright so the side with the timer is facing up. The GUI should show the corresponding page.",
+            "To start the game, press the button that is underneath the timer. This should start the timer both on the bomb and on the GUI.",
+            "Now that the timer has started, your are ready to play some games!",
+            "In the WIRE CUTTING GAME, your goal is to cut the correct wire. Carefully observe the wires displayed on the GUI, then relay that information to your teammate. They will then give you instructions on the correct button to press.",
+            "In the SEQUENCING GAME, your goal is enter four symbols in the correct order. Carefully observe what symbols appear on the GUI, and relay that information to your teammate. They will give you instructions on what order to press the buttons in.",
+            "In the SIMON SAYS GAME, your goal is to move the bomb around the screen in a correct sequence. Observe what colors appear on the GUI, and relay that information to the manual player. They will give instructions on how to move the bomb.",
+            "In the BINARY SPEECH GAME, your goal is speak a correct code word into the microphone. Relay the big-endian number, to the manual player, and they will give instructions on what to say in the microphone.",
+            "After the main four games are completed, you can move on to the final game, the DEFUSAL GAME.",
+            "In the DEFUSAL GAME, your goal is to defuse the bomb at the correct time. Get instructions from the manual player on when you are allowed to defuse the bomb.",
+            "To SWITCH BETWEEN GAMES, rotate the bomb to a different side. Doing this will also rotate the GUI to the corresponding side.",
+        ]
+        
+        # Main tutorial text node
+        self.popupTextNode = TextNode('popupTextNode')
+        self.popupTextNode.setWordwrap(35)
+        self.popupTextNode.setAlign(TextNode.ACenter)
+        self.popupTextNodePath = aspect2d.attachNewNode(self.popupTextNode)
+        self.popupTextNodePath.setScale(0.07)
+        self.popupTextNodePath.setPos(0, 0, -0.4)
+        
+        # Navigation buttons
+        self.prevButton = DirectButton(text=("Prev", "Prev", "Prev", "Prev"), scale=0.05,
+                                       pos=(-0.3, 0, -0.7), command=self.prevPage)
+        self.prevButton.setTransparency(True)
+        
+        self.nextButton = DirectButton(text=("Next", "Next", "Next", "Next"), scale=0.05,
+                                       pos=(0.3, 0, -0.7), command=self.nextPage)
+        self.nextButton.setTransparency(True)
+
+        # Tutorial page number display
+        self.pageNumberNode = TextNode('pageNumberNode')
+        self.pageNumberNode.setAlign(TextNode.ACenter)
+        self.pageNumberNodePath = aspect2d.attachNewNode(self.pageNumberNode)
+        self.pageNumberNodePath.setScale(0.07)
+        self.pageNumberNodePath.setPos(0, 0, -0.7)
+
+        # Tutorial images
+        self.tutorialImage1 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0, 0, 0.2), scale=(0.5, 1, 0.5))
+        self.tutorialImage1.setTransparency(TransparencyAttrib.MAlpha)
+        self.tutorialImage1.hide()
+
+        self.tutorialImage2 = OnscreenImage(image='tutorial_images/bomb.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
+        self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
+        self.tutorialImage2.hide()
+
+        self.max_image_width = 0.5
+        self.max_image_height = 0.5
+
+        # Tutorial videos
+        self.tutorial_video_texture = None
+        self.tutorial_video_card = None
+
+        self.popupVisible = False
+        self.hidePopup()
 
     def finalizeExit(self):
         self.running = False
@@ -276,6 +353,163 @@ class BombApp(ShowBase):
         self.taskMgr.remove("blink_colon")
         self.taskMgr.remove("blink_light")
         self.death_dialog.show()
+    
+    # Tutorial methods
+    #
+    # Updates content at each page of tutorial
+    def updateText(self):
+        self.popupTextNode.setText(self.pages[self.currentPage])
+        self.prevButton.show() if self.currentPage > 0 else self.prevButton.hide()
+        self.nextButton.show() if self.currentPage < len(self.pages) - 1 else self.nextButton.hide()
+
+        if self.currentPage < 3:
+            image_path1 = 'tutorial_images/bomb.png'
+            self.tutorialImage1.setImage(image_path1)
+            self.tutorialImage1.setPos(0, 0, 0.2)
+            self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
+            self.tutorialImage1.show()
+            self.tutorialImage2.hide()
+        elif self.currentPage == 12:
+            self.tutorialImage1.hide()
+            self.tutorialImage2.hide()
+            self.playTutorialVideo('tutorial_videos/bomb_rotation.mp4')
+        else:
+            self.tutorialImage1.setPos(-0.5, 0, 0.2)
+            image_path1 = ""
+            image_path2 = ""
+
+            if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
+                image_path1 = 'tutorial_images/bomb_arduino1.png'
+                image_path2 = 'tutorial_images/gui_timer.png'
+            elif self.currentPage == 4:
+                image_path1 = 'tutorial_images/bomb_start_button.png'
+                image_path2 = 'tutorial_images/gui_timer.png'
+            elif self.currentPage == 6:
+                image_path1 = 'tutorial_images/bomb_wires.png'
+                image_path2 = 'tutorial_images/gui_wires.png'
+            elif self.currentPage == 7:
+                image_path1 = 'tutorial_images/bomb_sequence.png'
+                image_path2 = 'tutorial_images/gui_sequence.png'
+            elif self.currentPage == 8:
+                image_path1 = 'tutorial_images/bomb_localization.png'
+                image_path2 = 'tutorial_images/gui_localization.png'
+            elif self.currentPage == 9:
+                image_path1 = 'tutorial_images/bomb_speech.png'
+                image_path2 = 'tutorial_images/gui_speech.png'
+
+            if image_path1:
+                self.tutorialImage1.setImage(image_path1)
+                self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
+            if image_path2:
+                self.tutorialImage2.setImage(image_path2)
+                self.adjust_image_aspect(self.tutorialImage2, image_path2, self.max_image_width, self.max_image_height)
+
+            self.tutorialImage1.show()
+            self.tutorialImage2.show()
+            self.stopTutorialVideo()
+
+        self.updatePageNumber()
+        
+    def updatePageNumber(self):
+        # Update page number text
+        self.pageNumberNode.setText(f"{self.currentPage + 1}/{len(self.pages)}")
+
+    def prevPage(self):
+        # Move to previous page
+        if self.currentPage > 0:
+            self.currentPage -= 1
+        self.updateText()
+        
+    def nextPage(self):
+        # Move to next page
+        if self.currentPage < len(self.pages) - 1:
+            self.currentPage += 1
+        self.updateText()
+    
+    def togglePopup(self):
+        if self.popupVisible:
+            self.hidePopup()
+        else:
+            self.showPopup()
+    
+    def showPopup(self):
+        self.popupBackground.show()
+        self.popupTextNodePath.show()
+        self.prevButton.show()
+        self.nextButton.show()
+        self.pageNumberNodePath.show()
+        self.updateText()
+        self.popupVisible = True
+        self.popupButton["text"] = "Hide Tutorial"
+
+    def hidePopup(self):
+        self.popupBackground.hide()
+        self.popupTextNodePath.hide()
+        self.prevButton.hide()
+        self.nextButton.hide()
+        self.pageNumberNodePath.hide()
+        self.tutorialImage1.hide()
+        self.tutorialImage2.hide()
+        self.stopTutorialVideo()
+        self.popupVisible = False
+        self.popupButton["text"] = "Show Tutorial"
+    
+    # Method to play the tutorial video
+    def playTutorialVideo(self, video_path):
+        self.stopTutorialVideo()  # Stop any currently playing video
+
+        # Load the movie texture
+        self.tutorial_video_texture = MovieTexture("tutorial_video")
+        success = self.tutorial_video_texture.read(video_path)
+
+        if not success:
+            print(f"Failed to load video: {video_path}")
+            return
+
+        print(f"Video loaded successfully: {video_path}")
+        
+        # Ensure video is in a compatible format
+        print(f"Video format: {self.tutorial_video_texture.getXSize()}x{self.tutorial_video_texture.getYSize()}, {self.tutorial_video_texture.getNumComponents()} components")
+
+        cm = CardMaker('videoCard')
+        cm.setFrame(-0.75, 0.75, -0.75, 0.75)
+        self.tutorial_video_card = aspect2d.attachNewNode(cm.generate())
+        self.tutorial_video_card.setTexture(self.tutorial_video_texture)
+        self.tutorial_video_card.setPos(0.2, 0, 0.2)
+        self.tutorial_video_card.setScale(0.69, 0.69, 0.69)
+        self.tutorial_video_card.setTransparency(TransparencyAttrib.MAlpha)
+
+        self.tutorial_video_texture.setLoop(True)
+        self.tutorial_video_texture.play()
+
+    # Method to stop the tutorial video
+    def stopTutorialVideo(self):
+        if self.tutorial_video_texture:
+            self.tutorial_video_texture.stop()
+        if self.tutorial_video_card:
+            self.tutorial_video_card.removeNode()
+        self.tutorial_video_texture = None
+        self.tutorial_video_card = None
+
+    # Method to adjust image aspect ratios
+    def adjust_image_aspect(self, image_node: OnscreenImage, image_path: str, max_width: float, max_height: float):
+        # Load the image using PIL to get its dimensions
+        with Image.open(image_path) as img:
+            width, height = img.size
+        
+        # Calculate the aspect ratio
+        aspect_ratio = width / height
+
+        # Determine the scale factors
+        if width > height:
+            scale_x = max_width
+            scale_y = max_width / aspect_ratio
+        else:
+            scale_x = max_height * aspect_ratio
+            scale_y = max_height
+        
+        # Apply the scale to the image node
+        image_node.setScale(scale_x, 1, scale_y)
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")
