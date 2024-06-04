@@ -84,6 +84,7 @@ class BombApp(ShowBase):
         }
 
         self.__setup_game_over()
+        self.__setup_tutorial()
 
         # Setup post-processed components
         self.__setup_timer()
@@ -107,7 +108,12 @@ class BombApp(ShowBase):
         self.__setup_controls()
         self.start_game()
 
-        # Tutorial Initialization
+    def finalizeExit(self):
+        self.running = False
+        sys.exit()
+
+    def __setup_tutorial(self):
+# Tutorial Initialization
         cm = CardMaker('popupBackground')
         cm.setFrame(-1, 1, -1, 1)
         self.popupBackground = aspect2d.attachNewNode(cm.generate())
@@ -180,10 +186,6 @@ class BombApp(ShowBase):
         self.popupVisible = False
         self.hidePopup()
 
-    def finalizeExit(self):
-        self.running = False
-        sys.exit()
-
     def __setup_game_over(self):
         self.death_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7),
                                          fadeScreen=1)
@@ -222,12 +224,6 @@ class BombApp(ShowBase):
         self.timer_text_np.setPos(-0.1, 0.225, 0.3)
         self.timer_text_np.setScale(0.125, 0.125, 0.2)
         self.timer_text_np.setHpr(0, 270, 90)
-
-        """ self.timer_sphere_np = self.bomb.find("**/timer.led")
-        timer_light_node = PointLight("timer_light")
-        timer_light_node.setColor((0, 255, 0, 0))
-        self.timer_light_np = self.timer_sphere_np.attachNewNode(timer_light_node)
-        self.timer_light_np.setPos(0, 0, 0.5) """
 
     def __setup_solved_indicator(self, puzzle):
         sphere_np = self.bomb.find(f"**/{puzzle}.complete")
