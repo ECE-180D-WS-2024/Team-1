@@ -56,7 +56,7 @@ def init(app):
         return (status_np, sphere_light_np)
 
     status_nps = {
-        'green': setup_light('green', (0, 255, 0, 1)),
+        'blue': setup_light('blue', (0, 0, 255, 1)),
         'red': setup_light('red', (255, 0, 0, 1))
     }
 
@@ -108,9 +108,9 @@ def __set_status(status: Status):
 
     match status:
         case Status.LISTENING:
-            handle_lights(status_nps['green'], status_nps['red'])
+            handle_lights(status_nps['blue'], status_nps['red'])
         case Status.IDLE:
-            handle_lights(status_nps['red'], status_nps['green'])
+            handle_lights(status_nps['red'], status_nps['blue'])
     
 def __task_process_speech(app, task):
     if app.focused != Puzzle.SPEECH or not app.running:
