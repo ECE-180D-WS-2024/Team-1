@@ -282,21 +282,10 @@ class BombApp(ShowBase):
         self.accept(event.encode('orientation', Orientation.SEQUENCING), sequence.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.CLOCK), hold.focus, extraArgs=[self])
 
-        self.accept('q', localization.focus, extraArgs=[self])
-        self.accept('w', speech.focus, extraArgs=[self])
-        self.accept('e', wires.focus, extraArgs=[self])
-        self.accept('a', sequence.focus, extraArgs=[self])
-        self.accept('s', hold.focus, extraArgs=[self])
-
         self.accept(event.encode('sequence', Sequence.TOP_LEFT), sequence.press_btn, extraArgs=[self, (0, 0), (0.200018, 1.04975, 0.193841)])
         self.accept(event.encode('sequence', Sequence.TOP_RIGHT), sequence.press_btn, extraArgs=[self, (0, 1), (-0.199982, 1.04975, 0.193841)])
         self.accept(event.encode('sequence', Sequence.BOTTOM_LEFT), sequence.press_btn, extraArgs=[self, (1, 0), (0.200018, 1.04975, -0.206159)])
         self.accept(event.encode('sequence', Sequence.BOTTOM_RIGHT), sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
-
-        self.accept('i', sequence.press_btn, extraArgs=[self, (0, 0)])
-        self.accept('o', sequence.press_btn, extraArgs=[self, (0, 1)])
-        self.accept('k', sequence.press_btn, extraArgs=[self, (1, 0)])
-        self.accept('l', sequence.press_btn, extraArgs=[self, (1, 1)])
 
         self.accept(event.encode('rgb', RGB.PRESSED), hold.push_button, extraArgs=[self])
         self.accept(event.encode('rgb', RGB.NOT_PRESSED), hold.release_button, extraArgs=[self])
@@ -308,8 +297,23 @@ class BombApp(ShowBase):
         self.accept(event.encode('wire', Wire.WIRE_5), wires.cut_wire, extraArgs=[self, 5])
         self.accept(event.encode('wire', Wire.WIRE_6), wires.cut_wire, extraArgs=[self, 6])
 
-        for i in range(1, 7):
-            self.accept(f'{i}', wires.cut_wire, extraArgs=[self, i])
+        if self.args.keyboard_input:
+            for i in range(1, 7):
+                self.accept(f'{i}', wires.cut_wire, extraArgs=[self, i])
+
+            self.accept('q', localization.focus, extraArgs=[self])
+            self.accept('w', speech.focus, extraArgs=[self])
+            self.accept('e', wires.focus, extraArgs=[self])
+            self.accept('a', sequence.focus, extraArgs=[self])
+            self.accept('s', hold.focus, extraArgs=[self])
+
+            self.accept('i', sequence.press_btn, extraArgs=[self, (0, 0)])
+            self.accept('o', sequence.press_btn, extraArgs=[self, (0, 1)])
+            self.accept('k', sequence.press_btn, extraArgs=[self, (1, 0)])
+            self.accept('l', sequence.press_btn, extraArgs=[self, (1, 1)])
+
+            self.accept('space', hold.push_button, extraArgs=[self])
+            self.accept('space_up', hold.release_button, extraArgs=[self])
 
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
@@ -526,6 +530,7 @@ def main():
     parser = ArgumentParser(prog="Bomb goes boom")
     parser.add_argument('--no-color-calibration', action='store_true')
     parser.add_argument('--no-noise-calibration', action='store_true')
+    parser.add_argument('--keyboard-input', action='store_true')
     args = parser.parse_args()
 
     app = BombApp(args=args)
