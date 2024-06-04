@@ -44,6 +44,8 @@ class BombApp(ShowBase):
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
         self.sound_explode = self.loader.loadSfx("assets/sound/explode.mp3")
+        self.sound_error = self.loader.loadSfx("assets/sound/error.mp3")
+        self.sound_success = self.loader.loadSfx("assets/sound/success.mp3")
 
         self.font_ssd = self.loader.loadFont("assets/font/dseg7.ttf")
         self.font_ssd.setPixelsPerUnit(60)
@@ -73,6 +75,14 @@ class BombApp(ShowBase):
         self.render.setLight(self.spotlight_np)
         self.render.setShaderAuto()
 
+        self.solved_light_nps = {
+            Puzzle.HOLD: self.__setup_solved_indicator('hold'),
+            Puzzle.WIRES: self.__setup_solved_indicator('wire'),
+            Puzzle.LOCALIZATION: self.__setup_solved_indicator('ss'),
+            Puzzle.SPEECH: self.__setup_solved_indicator('speech'),
+            Puzzle.SEQUENCE: self.__setup_solved_indicator('seq')
+        }
+
         self.__setup_game_over()
 
         # Setup post-processed components
@@ -94,7 +104,7 @@ class BombApp(ShowBase):
         #   other thread is used to pass messages to the message bus
         ble.spawn(self, rgb_encoding)
 
-        self.__setup_controls() 
+        self.__setup_controls()
         self.start_game()
 
         # Tutorial Initialization
@@ -213,11 +223,20 @@ class BombApp(ShowBase):
         self.timer_text_np.setScale(0.125, 0.125, 0.2)
         self.timer_text_np.setHpr(0, 270, 90)
 
-        self.timer_sphere_np = self.bomb.find("**/timer.led")
+        """ self.timer_sphere_np = self.bomb.find("**/timer.led")
         timer_light_node = PointLight("timer_light")
         timer_light_node.setColor((0, 255, 0, 0))
         self.timer_light_np = self.timer_sphere_np.attachNewNode(timer_light_node)
-        self.timer_light_np.setPos(0, 0, 0.5)
+        self.timer_light_np.setPos(0, 0, 0.5) """
+
+    def __setup_solved_indicator(self, puzzle):
+        sphere_np = self.bomb.find(f"**/{puzzle}.complete")
+        light_node = PointLight(f"{puzzle}.complete_light")
+        light_node.setColor((0, 255, 0, 0))
+        light_np = sphere_np.attachNewNode(light_node)
+        light_np.setPos(0, 0, 0.5)
+
+        return (sphere_np, light_np)
 
     def __setup_num_displays(self):
         def setup_num_display(disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
@@ -250,10 +269,11 @@ class BombApp(ShowBase):
         ss_num_text = setup_num_display(ss_num_np, 'ss', 0.1, 0.1, -0.5, 0, 90, 270)
         hold_num_text = setup_num_display(hold_num_np, 'hold', -0.1, -0.1, 0.5, 90, 270, 90)
 
-        self.num_texts = [seq_num_text, wire_num_text, ss_num_text, hold_num_text]
+        self.num_texts = [seq_num_text, ss_num_text, hold_num_text, wire_num_text]
 
     def handle_mistake(self):
         if self.mistakes < 3:
+            self.sound_error.play()
             self.mistake_icons[self.mistakes].show()
             self.mistakes += 1
             self.mistakes_lock.notify_all()
@@ -261,9 +281,11 @@ class BombApp(ShowBase):
             self.explode_bomb()
 
     def solve_puzzle(self, puzzle: Puzzle):
-        if puzzle != Puzzle.SPEECH:
-            speech.display_puzzle_hex(self, puzzle)
+        self.sound_success.play()
         self.solved_puzzles.add(puzzle)
+
+        sphere_np, light_np = self.solved_light_nps[puzzle]
+        sphere_np.setLight(light_np)
 
         if len(self.solved_puzzles) == 5:
             self.task_blink_colon.remove()
@@ -336,36 +358,37 @@ class BombApp(ShowBase):
         secs_str = str(secs).zfill(2)
         self.timer_text_node.setText(f'{mins_str}:{secs_str}')
     
-    def blink_timer_light(self, task: Task):
-        if not self.timer_light_on:
+    def task_beep(self, task: Task):
+        self.sound_beep.play()
+        task.delayTime = 1 
+        """ if not self.timer_light_on:
             self.timer_sphere_np.setLight(self.timer_light_np)
             self.timer_light_on = True
-            self.sound_beep.play()
             task.delayTime = 0.5
         else:
             self.timer_sphere_np.setLightOff(self.timer_light_np)
             self.timer_light_on = False
-            task.delayTime = 0.5
+            task.delayTime = 0.5 """
         return task.again
     
     def start_game(self):
         self.death_dialog.hide()
         self.running = True
         self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
-        self.taskMgr.add(self.blink_timer_light, "blink_light", delay=1)
+        self.taskMgr.add(self.task_beep, "blink_light", delay=1)
         self.mistakes = 0
         self.solved_puzzles = set()
+
         for icon in self.mistake_icons:
             icon.hide()
+
+        for sphere_np, light_np in self.solved_light_nps.values():
+            sphere_np.setLightOff(light_np)
 
         wires.generate_puzzle(self)
         sequence.generate_puzzle(self)
         localization.generate_puzzle()
         self.messenger.send('hw_reset')
-
-        for num_text in self.num_texts:
-            if num_text.getName() != 'wire.disp':
-                num_text.setText("")
 
     def explode_bomb(self):
         self.sound_explode.play()

@@ -21,8 +21,8 @@ def generate_code():
 
     # Generate 4 bytes
     for _ in range(4):
-        byte_key.append(random.randint(0, 255))
-    bytes_hex_strs = [format(b, '02X') for b in byte_key]
+        byte_key.append(random.randint(0, 3))
+    bytes_hex_strs = [format(b, '02b') for b in byte_key]
 
     return byte_key, bytes_hex_strs
 
@@ -72,9 +72,9 @@ def init(app):
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source)
 
-    generate_puzzle()
+    generate_puzzle(app)
 
-def generate_puzzle():
+def generate_puzzle(app):
     global bytes_hex_strs
     global word
 
@@ -83,16 +83,20 @@ def generate_puzzle():
     # Analyze the code and determine the key
     word = analyze_code(puzzle_bytes)
 
+    display_puzzle_hex(app, Puzzle.HOLD)
+    display_puzzle_hex(app, Puzzle.LOCALIZATION)
+    display_puzzle_hex(app, Puzzle.SEQUENCE)
+
 def display_puzzle_hex(app, puzzle):
-    text_node = app.num_texts[int(puzzle)]
-    text_node.setText(bytes_hex_strs[int(puzzle)])
+    if puzzle != Puzzle.WIRES:
+        text_node = app.num_texts[int(puzzle)]
+        text_node.setText(bytes_hex_strs[int(puzzle)])
 
 def focus(app):
     app.bomb.hprInterval(0.25, (0, 0, 0)).start()
     app.focused = Puzzle.SPEECH
     
-    if app.is_solved(Puzzle.HOLD) and app.is_solved(Puzzle.LOCALIZATION) and app.is_solved(Puzzle.SEQUENCE) and app.is_solved(Puzzle.WIRES):
-        app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
+    app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
 
 def __set_status(status: Status):
     def handle_lights(on_nps, off_nps):
