@@ -128,7 +128,7 @@ def __end_of_stage(user_answers):
     return len(user_answers) == curr_stage + 1
 
 def focus(app):
-    app.bomb.hprInterval(0.25, (90, 0, 0)).start()
+    app.bomb.hprInterval(0.25, (180, 0, 0)).start()
     app.focused = Puzzle.LOCALIZATION
 
     if not app.is_solved(Puzzle.LOCALIZATION):

@@ -59,12 +59,12 @@ def generate_puzzle(app):
         bot_np.setMaterial(material, 1)
 
         _, p, r = top_np.getHpr()
-        top_np.setHpr(-91.78852081298828, p, r)
+        top_np.setHpr(91.78852081298828, p, r)
     
     wire_cut = [False] * 6
 
 def focus(app):
-    app.bomb.hprInterval(0.25, (-90, 0, 0)).start()
+    app.bomb.hprInterval(0.25, (90, 0, 0)).start()
     app.focused = Puzzle.WIRES
 
 def __set_wire_hpr(wire_np, direction):

@@ -17,6 +17,13 @@ MANUAL = [
     ['r', 'y', 'c', 'e', 's', 'w', 'i', 'g']
 ]
 
+BTN_INIT_POS_COORDS = {
+    (0, 0): (1.05, -0.1, 0.2),
+    (0, 1): (1.05, 0.3, 0.2),
+    (1, 0): (1.05, -0.1, -0.2),
+    (1, 1): (1.05, 0.3, -0.2),
+}
+
 randomized_ordering = []
 row_n = -1
 btn_depressed = [False] * 4
@@ -47,9 +54,9 @@ def init(app):
         btn_texts.append(text)
         __render_btn_symbol(app.bomb, coord, text)
 
-    generate_puzzle()
+    generate_puzzle(app)
 
-def generate_puzzle():
+def generate_puzzle(app):
     global key
     global randomized_ordering
     global row_n
@@ -68,16 +75,21 @@ def generate_puzzle():
         btn_text = btn_texts[i]
         btn_text.setText(ch)
     
+    for btn_coord, init_pos_coord in BTN_INIT_POS_COORDS.items():
+        btn = __get_btn_np(app.bomb, btn_coord)
+        btn.setPos(init_pos_coord)
+    
+    btn_depressed = [False] * 4
 
 def focus(app):
-    app.bomb.hprInterval(0.25, (180, 0, 0)).start()
+    app.bomb.hprInterval(0.25, (-90, 0, 0)).start()
     app.focused = Puzzle.SEQUENCE
 
-def press_btn(app, btn_coord, initial_pos):
+def press_btn(app, btn_coord):
     btn = __get_btn_np(app.bomb, btn_coord)
-    x, y, z = initial_pos
+    x, y, z = BTN_INIT_POS_COORDS[btn_coord]
 
-    press_interval = btn.posInterval(0.2, (x, y - 0.1, z))
+    press_interval = btn.posInterval(0.2, (x - 0.1, y, z))
     release_interval = btn.posInterval(0.2, (x, y, z))
 
     btn_index = __btn_coord_to_arr_idx(btn_coord)
