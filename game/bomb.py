@@ -363,6 +363,10 @@ class BombApp(ShowBase):
         localization.generate_puzzle()
         self.messenger.send('hw_reset')
 
+        for num_text in self.num_texts:
+            if num_text.getName() != 'wire.disp':
+                num_text.setText("")
+
     def explode_bomb(self):
         self.sound_explode.play()
         self.taskMgr.remove("blink_colon")
