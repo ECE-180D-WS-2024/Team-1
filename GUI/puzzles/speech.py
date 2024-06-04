@@ -33,7 +33,7 @@ def analyze_code(bytes):
     # Split the code into individual bytes
     # Check the conditions and determine the output
     if binary_bytes[0][0] == '1':
-        return "Grape"
+        return "Orange"
     elif int(binary_bytes[1], 2) % 8 == 0:
         return "Banana"
     elif binary_bytes[2][-1] == '0':
