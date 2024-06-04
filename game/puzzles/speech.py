@@ -89,7 +89,7 @@ def generate_puzzle(app):
 
 def display_puzzle_hex(app, puzzle):
     if puzzle != Puzzle.WIRES:
-        text_node = app.num_texts[int(puzzle)]
+        text_node = app.num_texts[int(puzzle)] 
         text_node.setText(bytes_hex_strs[int(puzzle)])
 
 def focus(app):
@@ -118,14 +118,34 @@ def __task_process_speech(app, task):
     # Initialize the recognizer
     # Use the default microphone as the audio source
     with sr.Microphone() as source:
-        __set_status(Status.LISTENING)
-        audio = recognizer.listen(source, timeout=3)             
-        __set_status(Status.IDLE)      
+        try:
+            print("waiting on start")
+            audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=1)
+        except Exception as e:
+            return task.again
+    try:
+        spoken_start = recognizer.recognize_google(audio_start)
+        print(spoken_start)
+        if str(spoken_start).lower().replace(" ", "") != "start":
+            return task.again
+        else:
+            __set_status(Status.LISTENING)
+    except Exception as e:
+        # Speech is unintelligible
+        return task.again
+    
+    with sr.Microphone() as source:
+        try:
+            audio = recognizer.listen(source, timeout=2, phrase_time_limit=1)             
+            __set_status(Status.IDLE)      
+        except Exception as e:
+            return task.again
     try:
         # Recognize speech using Google Speech Recognition
         # print("You said " + r.recognize_google(audio))    
         
         # Check if the recognized speech matches the key
+        print(spoken)
         spoken = recognizer.recognize_google(audio)
         if str(spoken).lower().replace(" ", "") == word.lower():
             app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
