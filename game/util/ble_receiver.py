@@ -48,7 +48,8 @@ class BLEController():
     async def discover(self) -> BLEDevice:
         device: BLEDevice = None
         attempts = 0
-        while device is None and attempts < 3:
+        while device is None and attempts < 5:
+            print(f"connection attempt {attempts + 1}")
             device = await BleakScanner.find_device_by_name(self.device_name, timeout=5)
             if device is None:
                 attempts += 1
@@ -83,6 +84,7 @@ async def mainAll(app, orientation, t, sequence, wire, rgb, rgb_encoding, reset)
     controller = BLEController()
 
     if await controller.connect():
+        print("connected")
         await controller.configRGB(rgb_encoding)
         while True:
             if not app.running:

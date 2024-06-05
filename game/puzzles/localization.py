@@ -224,26 +224,27 @@ def task_process_cv_frame(task_state, task: Task):
         # Check if the object is centered within the designated area
         if color_middle_x <= bounds["rx"] - margin_x and color_middle_x >= bounds["ly"] + margin_x and \
             color_middle_y >= bounds["ty"] and color_middle_y <= bounds["by"]:
-            task_state["centered"] = True
+            task_state["centered"] += 1
         
         # Check the corner based on object position and add user's answer
-        if task_state["centered"]:
+        if task_state["centered"] > 3:
+            print("recentred")
             if color_middle_x < bounds["ly"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(1)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             elif color_middle_x > bounds["rx"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(2)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             elif color_middle_x < bounds["ly"] and color_middle_y > bounds["by"]:
                 task_state["user_answers"].append(3)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             elif color_middle_x > bounds["rx"] and color_middle_y > bounds["by"]:
                 task_state["user_answers"].append(4)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             
         # Validate user's answer with the answer key
         if task_state["new_added"]:
