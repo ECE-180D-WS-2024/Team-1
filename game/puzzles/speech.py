@@ -128,19 +128,22 @@ def __task_process_speech(task_state, task):
         with sr.Microphone() as source:
             try:
                 print("waiting on start")
-                audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=3)
+                audio_start = recognizer.listen(source, timeout=5, phrase_time_limit=3)
             except Exception as e:
                 print(e)
                 return task.again
         try:
+            print("tried")
             spoken_start = recognizer.recognize_google(audio_start)
-            print(spoken_start)
-            if str(spoken_start).lower().replace(" ", "") != "start":
+            print(f'word: {spoken_start}')
+            if "begin" not in spoken_start.lower().replace(" ", ""):
+                print("not equal")
                 return task.again
             else:
                 task_state['started'] = True
                 return task.again
         except Exception as e:
+            print("exception")
             # Speech is unintelligible
             print(e)
             return task.again
@@ -149,7 +152,7 @@ def __task_process_speech(task_state, task):
         with sr.Microphone() as source:
             try:
                 __set_status(Status.LISTENING)
-                audio = recognizer.listen(source, timeout=3, phrase_time_limit=3)             
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=3)             
             except Exception as e:
                 return task.again
         try:
@@ -159,7 +162,7 @@ def __task_process_speech(task_state, task):
             # Check if the recognized speech matches the key
             spoken = recognizer.recognize_google(audio)
             print(spoken)
-            if str(spoken).lower().replace(" ", "") == word.lower():
+            if word.lower() in spoken.lower().replace(" ", ""):
                 app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
                 task_state["started"] = False
                 __set_status(Status.IDLE)
