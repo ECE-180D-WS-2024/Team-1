@@ -398,10 +398,6 @@ class BombApp(ShowBase):
             image_path1 = ""
             image_path2 = ""
 
-            #if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
-            #    image_path1 = 'assets/images/bomb_arduino1.png'
-            #    image_path2 = 'assets/images/gui_timer.png'
-
             if self.currentPage == 5:
                 image_path1 = 'assets/images/bomb_wires.png'
                 image_path2 = 'assets/images/gui_wires.png'
@@ -489,11 +485,6 @@ class BombApp(ShowBase):
         if not success:
             print(f"Failed to load video: {video_path}")
             return
-
-        print(f"Video loaded successfully: {video_path}")
-        
-        # Ensure video is in a compatible format
-        print(f"Video format: {self.tutorial_video_texture.getXSize()}x{self.tutorial_video_texture.getYSize()}, {self.tutorial_video_texture.getNumComponents()} components")
 
         cm = CardMaker('videoCard')
         cm.setFrame(-0.75, 0.75, -0.75, 0.75)
