@@ -200,13 +200,13 @@ def task_process_cv_frame(task_state, task: Task):
     contours, _ = cv2.findContours(mask, 1, 2) # Find contours in the mask
 
     # Draw rectangles to indicate different zones on the screen
-    cv2.rectangle(image, (0, 0), (bounds["ly"], bounds["ty"]), (0, 0, 255),  1)
-    cv2.rectangle(image, (bounds["rx"], 0), (width, bounds["ty"]), (0, 0, 255), 1)
-    cv2.rectangle(image, (0, bounds["by"]), (bounds["ly"], height), (0, 0, 255), 1)
-    cv2.rectangle(image, (bounds["rx"], bounds["by"]), (width, height), (0, 0, 255), 1)
+    cv2.rectangle(image, (0, 0), (bounds["ly"], bounds["ty"]), (0, 0, 255),  4)
+    cv2.rectangle(image, (bounds["rx"], 0), (width, bounds["ty"]), (0, 0, 255), 4)
+    cv2.rectangle(image, (0, bounds["by"]), (bounds["ly"], height), (0, 0, 255), 4)
+    cv2.rectangle(image, (bounds["rx"], bounds["by"]), (width, height), (0, 0, 255), 4)
     # Center rectangle
     cv2.rectangle(image, (bounds["ly"] + margin_x, bounds["ty"]), \
-                (bounds["rx"]-margin_x, bounds["by"]), (0, 255, 0), 1)
+                (bounds["rx"]-margin_x, bounds["by"]), (0, 255, 0), 4)
 
     # Process the largest contour detected
     if contours:
