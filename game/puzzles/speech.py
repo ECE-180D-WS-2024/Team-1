@@ -97,11 +97,13 @@ def focus(app):
     app.bomb.hprInterval(0.25, (0, 0, 0)).start()
     app.focused = Puzzle.SPEECH
     
-    task_state = {
-        "app": app,
-        "started": False,
-    }
-    app.taskMgr.add(__task_process_speech, extraArgs=[task_state], appendTask=True, taskChain="speech_chain")
+    if not app.is_solved(Puzzle.SPEECH) and not app.taskMgr.hasTaskNamed("speech_chain"):
+        task_state = {
+            "app": app,
+            "started": False,
+        }
+
+        app.taskMgr.add(__task_process_speech, extraArgs=[task_state], appendTask=True, taskChain="speech_chain")
 
 def __set_status(status: Status):
     def handle_lights(on_nps, off_nps):
