@@ -132,11 +132,12 @@ def __end_of_stage(user_answers):
 def focus(app):
     app.bomb.hprInterval(0.25, (180, 0, 0)).start()
     app.focused = Puzzle.LOCALIZATION
+    print(answer_key)
 
     if not app.is_solved(Puzzle.LOCALIZATION):
         # Initialize game variables
         # Set up video capture
-        cap = cv2.VideoCapture(1)  # Start video capture
+        cap = cv2.VideoCapture(0)  # Start video capture
         while not cap.isOpened():
             pass
         BORDER_THICKNESS = 50
@@ -149,6 +150,9 @@ def focus(app):
             "ty": int(height/3),
             "by": int(2*height/3),
         }
+
+        print(bounds)
+
         dimens = {
             "width": width,
             "height": height,
@@ -274,6 +278,7 @@ def task_process_cv_frame(task_state, task: Task):
                         curr_sequence.loop()
                         
                         curr_stage += 1
+                        app.sound_success.play()
             else:
                 app.handle_mistake()
                 task_state["user_answers"] = [] # Reset user answer for the current stage
