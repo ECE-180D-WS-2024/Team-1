@@ -52,7 +52,7 @@ def check_answer(time, color, freq):
         else:
             return False
     elif (color == 1 and freq == 2):
-        if (tensDig == 2):
+        if (tensDig == 0 or tensDig == 2 or tensDig == 4):
             return True
         else:
             return False
@@ -62,7 +62,7 @@ def check_answer(time, color, freq):
         else:
             return False
     elif (color == 0):
-        if (lastDig == 1 and tensDig == 1):
+        if (lastDig == tensDig):
             return True
         else:
             return False
