@@ -229,6 +229,7 @@ class BombApp(ShowBase):
             self.task_blink_colon.remove()
             self.task_decr_time.remove()
             self.task_blink_timer_light.remove()
+            self.__start_menu()
     
     def is_solved(self, puzzle: Puzzle):
         return puzzle in self.solved_puzzles
