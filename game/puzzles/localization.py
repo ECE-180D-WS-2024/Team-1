@@ -227,8 +227,7 @@ def task_process_cv_frame(task_state, task: Task):
             task_state["centered"] += 1
         
         # Check the corner based on object position and add user's answer
-        print(f'state: {task_state["centered"]}')
-        if task_state["centered"] > 10:
+        if task_state["centered"] > 3:
             if color_middle_x < bounds["ly"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(1)
                 task_state["new_added"] = True
