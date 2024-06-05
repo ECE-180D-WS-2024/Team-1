@@ -54,7 +54,8 @@ class BombApp(ShowBase):
         self.bomb = None
         self.death_dialog = None
         self.mistake_icons = None
-        self.__start_menu()
+        self.win_dialog = None
+        self.__menu("Play")
 
         # Tutorial Initialization
         cm = CardMaker('popupBackground')
@@ -149,7 +150,7 @@ class BombApp(ShowBase):
                                                    scale=0.05,
                                                    pos = (0, 0, -0.4),
                                                    parent=self.death_dialog,
-                                                   command=self.__start_menu,
+                                                   command=self.__reset_game,
                                                    frameSize=(-4, 4, -1, 1))
         
     def __setup_timer(self):
@@ -229,7 +230,7 @@ class BombApp(ShowBase):
             self.task_blink_colon.remove()
             self.task_decr_time.remove()
             self.task_blink_timer_light.remove()
-            self.__start_menu()
+            self.__display_win()
     
     def is_solved(self, puzzle: Puzzle):
         return puzzle in self.solved_puzzles
@@ -535,22 +536,47 @@ class BombApp(ShowBase):
 
         self.playButton.hide()
 
-    # Creates menu on initialization and on game reset
-    def __start_menu(self):
+    # Creates menu
+    def __menu(self, buttonText):
         # Play button initialization
-        self.playButton = DirectButton(text=("Play"), scale=0.2, pos=(0, 0, 0), command=self.__play_handler)
-
+        print('&&')
+        self.playButton = DirectButton(text=buttonText, scale=0.2, pos=(0, 1, 0), command=self.__play_handler)
+    
+    def __reset_game(self):
         # Clear previous game content if it existed
         if self.bomb is not None:
             self.bomb.removeNode()
         if self.death_dialog is not None:
             self.death_dialog.hide()
+        if self.win_dialog is not None:
+            self.win_dialog.hide()
         self.running = False
         self.mistakes = 0
         self.solved_puzzles = set()
         if self.mistake_icons is not None:
             for icon in self.mistake_icons:
                 icon.hide()
+        
+        self.__play_handler()
+    
+    def __display_win(self):
+        # self.__menu("Play Again?")
+        self.__reset_game()
+        self.win_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7), fadeScreen=1)
+        self.win_dialog_title = DirectLabel(text="WOOHOO!",
+                                              scale=0.15,
+                                              pos = (0, 0, 0.4),
+                                              parent=self.win_dialog)
+        self.win_dialog_subtitle = DirectLabel(text="You Win!",
+                                              scale=0.1,
+                                              pos = (0, 0, 0),
+                                              parent=self.win_dialog)
+        self.win_dialog_reset_btn = DirectButton(text="Play again",
+                                                   scale=0.05,
+                                                   pos = (0, 0, -0.4),
+                                                   parent=self.win_dialog,
+                                                   command=self.__reset_game,
+                                                   frameSize=(-4, 4, -1, 1))
 
 
 def main():
