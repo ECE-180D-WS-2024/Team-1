@@ -50,50 +50,11 @@ class BombApp(ShowBase):
         self.font_ftsg = self.loader.loadFont("assets/font/dseg14.ttf")
         self.font_ftsg.setPixelsPerUnit(60)
 
-        self.mistake_icons = []
-        for i in range(self.max_mistakes):
-            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
-                                 pos = (-1.275 + i*0.11, 0, 0.95),
-                                 scale = 0.04)
-            icon.setTransparency(True)
-            self.mistake_icons.append(icon)
-
-        # Setup scene
-        self.bomb = self.loader.loadModel("assets/model/bomb.bam")
-        self.bomb.reparentTo(self.render)
-        self.bomb.setPos(0, 5.5, 0)
-        self.bomb.setHpr(0, 90, 0)
-
-        self.spotlight = Spotlight("spotlight")
-        self.spotlight_np = self.render.attachNewNode(self.spotlight)
-        self.spotlight_np.setPos(-4, -4, 4)
-        self.spotlight_np.lookAt(self.bomb)
-        self.render.setLight(self.spotlight_np)
-        self.render.setShaderAuto()
-
-        self.__setup_game_over()
-
-        # Setup post-processed components
-        self.__setup_timer()
-        self.__setup_num_displays()
-        
-        speech.init(self)
-        sequence.init(self)
-        wires.init(self)
-        rgb_encoding = hold.init(self)
-
-        if args.no_color_calibration:
-            localization.init(self, [0,0,0])            
-        else:
-            localization.init(self, calibrate())
-
-        # Create task chain for input handling
-        # Allocate two threads: one thread is used to communicate with Arduino, 
-        #   other thread is used to pass messages to the message bus
-        ble.spawn(self, rgb_encoding)
-
-        self.__setup_controls() 
-        self.start_game()
+        # Menu initialization
+        self.bomb = None
+        self.death_dialog = None
+        self.mistake_icons = None
+        self.__start_menu()
 
         # Tutorial Initialization
         cm = CardMaker('popupBackground')
@@ -157,7 +118,6 @@ class BombApp(ShowBase):
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
 
-
         self.max_double_image_width = 0.5
         self.max_double_image_height = 0.5
         self.max_single_image_width = 0.8
@@ -189,7 +149,7 @@ class BombApp(ShowBase):
                                                    scale=0.05,
                                                    pos = (0, 0, -0.4),
                                                    parent=self.death_dialog,
-                                                   command=self.start_game,
+                                                   command=self.__start_menu,
                                                    frameSize=(-4, 4, -1, 1))
         
     def __setup_timer(self):
@@ -524,6 +484,72 @@ class BombApp(ShowBase):
             scale_width = scale_height * aspect_ratio
 
         image.setScale(scale_width, 1, scale_height)
+    
+    # Initializes bomb on click
+    def __play_handler(self):
+        self.mistake_icons = []
+        for i in range(self.max_mistakes):
+            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
+                                 pos = (-1.275 + i*0.11, 0, 0.95),
+                                 scale = 0.04)
+            icon.setTransparency(True)
+            self.mistake_icons.append(icon)
+
+        # Setup scene
+        self.bomb = self.loader.loadModel("assets/model/bomb.bam")
+        self.bomb.reparentTo(self.render)
+        self.bomb.setPos(0, 5.5, 0)
+        self.bomb.setHpr(0, 90, 0)
+
+        self.spotlight = Spotlight("spotlight")
+        self.spotlight_np = self.render.attachNewNode(self.spotlight)
+        self.spotlight_np.setPos(-4, -4, 4)
+        self.spotlight_np.lookAt(self.bomb)
+        self.render.setLight(self.spotlight_np)
+        self.render.setShaderAuto()
+
+        self.__setup_game_over()
+
+        # Setup post-processed components
+        self.__setup_timer()
+        self.__setup_num_displays()
+        
+        speech.init(self)
+        sequence.init(self)
+        wires.init(self)
+        rgb_encoding = hold.init(self)
+
+        if self.args.no_color_calibration:
+            localization.init(self, [0,0,0])            
+        else:
+            localization.init(self, calibrate())
+
+        # Create task chain for input handling
+        # Allocate two threads: one thread is used to communicate with Arduino, 
+        #   other thread is used to pass messages to the message bus
+        ble.spawn(self, rgb_encoding)
+
+        self.__setup_controls() 
+        self.start_game()
+
+        self.playButton.hide()
+
+    # Creates menu on initialization and on game reset
+    def __start_menu(self):
+        # Play button initialization
+        self.playButton = DirectButton(text=("Play"), scale=0.2, pos=(0, 0, 0), command=self.__play_handler)
+
+        # Clear previous game content if it existed
+        if self.bomb is not None:
+            self.bomb.removeNode()
+        if self.death_dialog is not None:
+            self.death_dialog.hide()
+        self.running = False
+        self.mistakes = 0
+        self.solved_puzzles = set()
+        if self.mistake_icons is not None:
+            for icon in self.mistake_icons:
+                icon.hide()
 
 
 def main():
