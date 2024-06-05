@@ -44,6 +44,7 @@ class BombApp(ShowBase):
         self.sound_explode = self.loader.loadSfx("assets/sound/explode.mp3")
         self.sound_error = self.loader.loadSfx("assets/sound/error.mp3")
         self.sound_success = self.loader.loadSfx("assets/sound/success.mp3")
+        self.sound_win = self.loader.loadSfx("assets/sound/win.mp3")
 
         self.font_ssd = self.loader.loadFont("assets/font/dseg7.ttf")
         self.font_ssd.setPixelsPerUnit(60)
@@ -52,63 +53,31 @@ class BombApp(ShowBase):
         self.font_ftsg = self.loader.loadFont("assets/font/dseg14.ttf")
         self.font_ftsg.setPixelsPerUnit(60)
 
-        self.mistake_icons = []
-        for i in range(self.max_mistakes):
-            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
-                                 pos = (-1.275 + i*0.11, 0, 0.95),
-                                 scale = 0.04)
-            icon.setTransparency(True)
-            self.mistake_icons.append(icon)
-
-        # Setup scene
-        self.bomb = self.loader.loadModel("assets/model/bomb.bam")
-        self.bomb.reparentTo(self.render)
-        self.bomb.setPos(0, 5.5, 0)
-        self.bomb.setHpr(0, 90, 0)
-
-        self.spotlight = Spotlight("spotlight")
-        self.spotlight_np = self.render.attachNewNode(self.spotlight)
-        self.spotlight_np.setPos(-4, -4, 4)
-        self.spotlight_np.lookAt(self.bomb)
-        self.render.setLight(self.spotlight_np)
-        self.render.setShaderAuto()
-
-        self.solved_light_nps = {
-            Puzzle.HOLD: self.__setup_solved_indicator('hold'),
-            Puzzle.WIRES: self.__setup_solved_indicator('wire'),
-            Puzzle.LOCALIZATION: self.__setup_solved_indicator('ss'),
-            Puzzle.SPEECH: self.__setup_solved_indicator('speech'),
-            Puzzle.SEQUENCE: self.__setup_solved_indicator('seq')
-        }
-
-        self.__setup_game_over()
         self.__setup_tutorial()
-
-        # Setup post-processed components
-        self.__setup_timer()
-        self.__setup_num_displays()
-        
-        speech.init(self)
-        sequence.init(self)
-        wires.init(self)
-        rgb_encoding = hold.init(self)
-
-        if args.no_color_calibration:
-            localization.init(self, [0,0,0])            
-        else:
-            localization.init(self, calibrate())
-
-        # Create task chain for input handling
-        # Allocate two threads: one thread is used to communicate with Arduino, 
-        #   other thread is used to pass messages to the message bus
-        ble.spawn(self, rgb_encoding)
-
-        self.__setup_controls()
-        self.start_game()
+        self.__setup_win_dialog()
+        self.__menu("Play")
 
     def finalizeExit(self):
         self.running = False
         sys.exit()
+
+    def __setup_win_dialog(self):
+        self.win_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7), fadeScreen=1)
+        self.win_dialog_title = DirectLabel(text="WOOHOO!",
+                                              scale=0.15,
+                                              pos = (0, 0, 0.4),
+                                              parent=self.win_dialog)
+        self.win_dialog_subtitle = DirectLabel(text="You Win!",
+                                              scale=0.1,
+                                              pos = (0, 0, 0),
+                                              parent=self.win_dialog)
+        self.win_dialog_reset_btn = DirectButton(text="Play again",
+                                                   scale=0.05,
+                                                   pos = (0, 0, -0.4),
+                                                   parent=self.win_dialog,
+                                                   command=self.start_game,
+                                                   frameSize=(-4, 4, -1, 1))
+        self.win_dialog.hide()
 
     def __setup_tutorial(self):
 # Tutorial Initialization
@@ -117,7 +86,7 @@ class BombApp(ShowBase):
         self.popupBackground = aspect2d.attachNewNode(cm.generate())
         self.popupBackground.setColor(0, 0, 0, 1)
         self.popupBackground.setScale(1.25, 1.25, 0.75)
-        self.popupBackground.setPos(0, 0, 0)
+        self.popupBackground.setPos(0, 1, 0)
         self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
 
         # Tutorial toggle button
@@ -172,7 +141,6 @@ class BombApp(ShowBase):
         self.tutorialImage2 = OnscreenImage(image='assets/images/bomb.png', pos=(0.5, 0, 0.2), scale=(0.5, 1, 0.5))
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
-
 
         self.max_double_image_width = 0.5
         self.max_double_image_height = 0.5
@@ -284,15 +252,15 @@ class BombApp(ShowBase):
         sphere_np.setLight(light_np)
 
         if len(self.solved_puzzles) == 5:
-            self.task_blink_colon.remove()
-            self.task_decr_time.remove()
-            self.task_blink_timer_light.remove()
+            self.__display_win()
     
     def is_solved(self, puzzle: Puzzle):
         return puzzle in self.solved_puzzles
 
     def __setup_controls(self):
         self.accept('heartbeat', self.set_time)
+
+        self.accept('g', self.__display_win)
 
         self.accept(event.encode('orientation', Orientation.LOCALIZATION), localization.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.SPEECH), speech.focus, extraArgs=[self])
@@ -368,6 +336,7 @@ class BombApp(ShowBase):
         return task.again
     
     def start_game(self):
+        self.win_dialog.hide()
         self.death_dialog.hide()
         self.running = True
         self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
@@ -547,6 +516,74 @@ class BombApp(ShowBase):
             scale_width = scale_height * aspect_ratio
 
         image.setScale(scale_width, 1, scale_height)
+    
+    # Initializes bomb on click
+    def __play_handler(self):
+        self.mistake_icons = []
+        for i in range(self.max_mistakes):
+            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
+                                 pos = (-1.275 + i*0.11, 0, 0.95),
+                                 scale = 0.04)
+            icon.setTransparency(True)
+            self.mistake_icons.append(icon)
+
+        # Setup scene
+        self.bomb = self.loader.loadModel("assets/model/bomb.bam")
+        self.bomb.reparentTo(self.render)
+        self.bomb.setPos(0, 5.5, 0)
+        self.bomb.setHpr(0, 90, 0)
+
+        self.spotlight = Spotlight("spotlight")
+        self.spotlight_np = self.render.attachNewNode(self.spotlight)
+        self.spotlight_np.setPos(-4, -4, 4)
+        self.spotlight_np.lookAt(self.bomb)
+        self.render.setLight(self.spotlight_np)
+        self.render.setShaderAuto()
+
+        self.solved_light_nps = {
+            Puzzle.HOLD: self.__setup_solved_indicator('hold'),
+            Puzzle.WIRES: self.__setup_solved_indicator('wire'),
+            Puzzle.LOCALIZATION: self.__setup_solved_indicator('ss'),
+            Puzzle.SPEECH: self.__setup_solved_indicator('speech'),
+            Puzzle.SEQUENCE: self.__setup_solved_indicator('seq')
+        }
+
+        self.__setup_game_over()
+
+        # Setup post-processed components
+        self.__setup_timer()
+        self.__setup_num_displays()
+        
+        speech.init(self)
+        sequence.init(self)
+        wires.init(self)
+        rgb_encoding = hold.init(self)
+
+        if self.args.no_color_calibration:
+            localization.init(self, [0,0,0])            
+        else:
+            localization.init(self, calibrate())
+
+        # Create task chain for input handling
+        # Allocate two threads: one thread is used to communicate with Arduino, 
+        #   other thread is used to pass messages to the message bus
+        ble.spawn(self, rgb_encoding)
+
+        self.__setup_controls()
+        self.start_game()
+
+        self.playButton.hide()
+
+    # Creates menu
+    def __menu(self, buttonText):
+        # Play button initialization
+        self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, 0, 0), command=self.__play_handler)
+    
+    def __display_win(self):
+        self.sound_win.play()
+        self.taskMgr.remove("blink_colon")
+        self.taskMgr.remove("blink_light")
+        self.win_dialog.show()
 
 
 def main():

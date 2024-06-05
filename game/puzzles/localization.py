@@ -144,10 +144,10 @@ def focus(app):
         height = int(cap.get(4)) + 2*BORDER_THICKNESS  # Get video height
         # Define screen boundary constants for bomb movement
         bounds = {
-            "ly": int(width/4),
-            "rx": int(3*width/4),
-            "ty": int(height/3),
-            "by": int(2*height/3),
+            "ly": int(width/3.5),
+            "rx": int(2.62*width/3.5),
+            "ty": int(height/2.5),
+            "by": int(1.5*height/2.5),
         }
 
         print(bounds)
@@ -228,7 +228,7 @@ def task_process_cv_frame(task_state, task: Task):
         
         # Check the corner based on object position and add user's answer
         print(f'state: {task_state["centered"]}')
-        if task_state["centered"] > 10:
+        if task_state["centered"] > 3:
             if color_middle_x < bounds["ly"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(1)
                 task_state["new_added"] = True
@@ -250,6 +250,7 @@ def task_process_cv_frame(task_state, task: Task):
         if task_state["new_added"]:
             task_state["new_added"] = False
             if __correct_answer(answer = task_state["user_answers"][-1], stage=len(task_state["user_answers"]) - 1):
+                app.sound_success.play()
 
                 """
                     if at final required corner for this stage:
@@ -279,7 +280,6 @@ def task_process_cv_frame(task_state, task: Task):
                         curr_sequence.loop()
                         
                         curr_stage += 1
-                        app.sound_success.play()
             else:
                 app.handle_mistake()
                 task_state["user_answers"] = [] # Reset user answer for the current stage
