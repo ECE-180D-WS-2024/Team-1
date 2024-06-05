@@ -157,8 +157,11 @@ class BombApp(ShowBase):
         self.tutorialImage2.setTransparency(TransparencyAttrib.MAlpha)
         self.tutorialImage2.hide()
 
-        self.max_image_width = 0.5
-        self.max_image_height = 0.5
+
+        self.max_double_image_width = 0.5
+        self.max_double_image_height = 0.5
+        self.max_single_image_width = 0.8
+        self.max_single_image_height = 0.45
 
         # Tutorial videos
         self.tutorial_video_texture = None
@@ -386,7 +389,7 @@ class BombApp(ShowBase):
                 image_path1 = 'assets/images/checkboxes.png'
             self.tutorialImage1.setImage(image_path1)
             self.tutorialImage1.setPos(0, 0, 0.2)
-            self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
+            self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_single_image_width, self.max_single_image_height)
             self.tutorialImage1.show()
             self.tutorialImage2.hide()
         elif self.currentPage == 4:
@@ -419,16 +422,17 @@ class BombApp(ShowBase):
 
             if image_path1:
                 self.tutorialImage1.setImage(image_path1)
-                self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
+                self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_double_image_width, self.max_double_image_height)
             if image_path2:
                 self.tutorialImage2.setImage(image_path2)
-                self.adjust_image_aspect(self.tutorialImage2, image_path2, self.max_image_width, self.max_image_height)
+                self.adjust_image_aspect(self.tutorialImage2, image_path2, self.max_double_image_width, self.max_double_image_height)
 
             self.tutorialImage1.show()
             self.tutorialImage2.show()
             self.stopTutorialVideo()
 
         self.updatePageNumber()
+
         
     def updatePageNumber(self):
         # Update page number text
@@ -507,24 +511,20 @@ class BombApp(ShowBase):
         self.tutorial_video_card = None
 
     # Method to adjust image aspect ratios
-    def adjust_image_aspect(self, image_node: OnscreenImage, image_path: str, max_width: float, max_height: float):
-        # Load the image using PIL to get its dimensions
+    def adjust_image_aspect(self, image, image_path, max_width, max_height):
         with Image.open(image_path) as img:
             width, height = img.size
-        
-        # Calculate the aspect ratio
         aspect_ratio = width / height
 
-        # Determine the scale factors
         if width > height:
-            scale_x = max_width
-            scale_y = max_width / aspect_ratio
+            scale_width = min(max_width, max_height * aspect_ratio)
+            scale_height = scale_width / aspect_ratio
         else:
-            scale_x = max_height * aspect_ratio
-            scale_y = max_height
-        
-        # Apply the scale to the image node
-        image_node.setScale(scale_x, 1, scale_y)
+            scale_height = min(max_height, max_width / aspect_ratio)
+            scale_width = scale_height * aspect_ratio
+
+        image.setScale(scale_width, 1, scale_height)
+
 
 def main():
     parser = ArgumentParser(prog="Bomb goes boom")
