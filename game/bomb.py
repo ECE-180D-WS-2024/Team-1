@@ -560,7 +560,6 @@ class BombApp(ShowBase):
         self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, 0, 0), command=self.__play_handler)
     
     def __display_win(self):
-        # self.__menu("Play Again?")
         self.win_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7), fadeScreen=1)
         self.win_dialog_title = DirectLabel(text="WOOHOO!",
                                               scale=0.15,
