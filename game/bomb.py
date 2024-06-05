@@ -557,25 +557,7 @@ class BombApp(ShowBase):
     # Creates menu
     def __menu(self, buttonText):
         # Play button initialization
-        print('&&')
-        self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, -1, 0), command=self.__play_handler)
-    
-    def __reset_game(self):
-        # Clear previous game content if it existed
-        if self.bomb is not None:
-            self.bomb.removeNode()
-        if self.death_dialog is not None:
-            self.death_dialog.hide()
-        if self.win_dialog is not None:
-            self.win_dialog.hide()
-        self.running = False
-        self.mistakes = 0
-        self.solved_puzzles = set()
-        if self.mistake_icons is not None:
-            for icon in self.mistake_icons:
-                icon.hide()
-        
-        self.__play_handler()
+        self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, 0, 0), command=self.__play_handler)
     
     def __display_win(self):
         # self.__menu("Play Again?")
