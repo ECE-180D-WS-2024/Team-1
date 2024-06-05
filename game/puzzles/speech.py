@@ -21,20 +21,21 @@ def generate_code():
 
     # Generate 4 bytes
     for _ in range(4):
-        byte_key.append(random.randint(0, 255))
-    bytes_hex_strs = [format(b, '02X') for b in byte_key]
+        byte_key.append(random.randint(0, 3))
+    bytes_hex_strs = [format(b, '02b') for b in byte_key]
 
     return byte_key, bytes_hex_strs
 
 def analyze_code(bytes):
     """Analyze the code and determine the output based on the given rules."""
-    binary_bytes = [format(b, '08b') for b in bytes]
+    binary_bytes = [format(b, '02b') for b in bytes]
 
     # Split the code into individual bytes
     # Check the conditions and determine the output
+    print(binary_bytes)
     if binary_bytes[0][0] == '1':
         return "Orange"
-    elif int(binary_bytes[1], 2) % 8 == 0:
+    elif int(binary_bytes[1], 2) == 3:
         return "Banana"
     elif binary_bytes[2][-1] == '0':
         return "Apple"
@@ -56,7 +57,7 @@ def init(app):
         return (status_np, sphere_light_np)
 
     status_nps = {
-        'green': setup_light('green', (0, 255, 0, 1)),
+        'blue': setup_light('blue', (0, 0, 255, 1)),
         'red': setup_light('red', (255, 0, 0, 1))
     }
 
@@ -72,9 +73,9 @@ def init(app):
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source)
 
-    generate_puzzle()
+    generate_puzzle(app)
 
-def generate_puzzle():
+def generate_puzzle(app):
     global bytes_hex_strs
     global word
 
@@ -83,16 +84,24 @@ def generate_puzzle():
     # Analyze the code and determine the key
     word = analyze_code(puzzle_bytes)
 
+    display_puzzle_hex(app, Puzzle.HOLD)
+    display_puzzle_hex(app, Puzzle.LOCALIZATION)
+    display_puzzle_hex(app, Puzzle.SEQUENCE)
+
 def display_puzzle_hex(app, puzzle):
-    text_node = app.num_texts[int(puzzle)]
-    text_node.setText(bytes_hex_strs[int(puzzle)])
+    if puzzle != Puzzle.WIRES:
+        text_node = app.num_texts[int(puzzle)] 
+        text_node.setText(bytes_hex_strs[int(puzzle)])
 
 def focus(app):
     app.bomb.hprInterval(0.25, (0, 0, 0)).start()
     app.focused = Puzzle.SPEECH
     
-    if app.is_solved(Puzzle.HOLD) and app.is_solved(Puzzle.LOCALIZATION) and app.is_solved(Puzzle.SEQUENCE) and app.is_solved(Puzzle.WIRES):
-        app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
+    task_state = {
+        "app": app,
+        "started": False,
+    }
+    app.taskMgr.add(__task_process_speech, extraArgs=[task_state], appendTask=True, taskChain="speech_chain")
 
 def __set_status(status: Status):
     def handle_lights(on_nps, off_nps):
@@ -104,37 +113,70 @@ def __set_status(status: Status):
 
     match status:
         case Status.LISTENING:
-            handle_lights(status_nps['green'], status_nps['red'])
+            handle_lights(status_nps['blue'], status_nps['red'])
         case Status.IDLE:
-            handle_lights(status_nps['red'], status_nps['green'])
+            handle_lights(status_nps['red'], status_nps['blue'])
     
-def __task_process_speech(app, task):
+def __task_process_speech(task_state, task):
+    app = task_state["app"]
+    print(task_state['started'])
     if app.focused != Puzzle.SPEECH or not app.running:
         return task.done
     # Initialize the recognizer
     # Use the default microphone as the audio source
-    with sr.Microphone() as source:
-        __set_status(Status.LISTENING)
-        audio = recognizer.listen(source, timeout=3)             
-        __set_status(Status.IDLE)      
-    try:
-        # Recognize speech using Google Speech Recognition
-        # print("You said " + r.recognize_google(audio))    
-        
-        # Check if the recognized speech matches the key
-        spoken = recognizer.recognize_google(audio)
-        if str(spoken).lower().replace(" ", "") == word.lower():
-            app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
-            return task.done
-        else:
-            app.taskMgr.add(app.handle_mistake, extraArgs=[])
-            # Use condition lock to wait for main thread to increment mistake counter
-            app.mistakes_lock.wait()
-            if app.mistakes < 3:
+    if not task_state['started']:
+        with sr.Microphone() as source:
+            try:
+                print("waiting on start")
+                audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=3)
+            except Exception as e:
+                print(e)
+                return task.again
+        try:
+            spoken_start = recognizer.recognize_google(audio_start)
+            print(spoken_start)
+            if str(spoken_start).lower().replace(" ", "") != "start":
                 return task.again
             else:
+                task_state['started'] = True
+                return task.again
+        except Exception as e:
+            # Speech is unintelligible
+            print(e)
+            return task.again
+    else:
+        print("enter phrase")
+        with sr.Microphone() as source:
+            try:
+                __set_status(Status.LISTENING)
+                audio = recognizer.listen(source, timeout=3, phrase_time_limit=3)             
+            except Exception as e:
+                return task.again
+        try:
+            # Recognize speech using Google Speech Recognition
+            # print("You said " + r.recognize_google(audio))    
+            
+            # Check if the recognized speech matches the key
+            spoken = recognizer.recognize_google(audio)
+            print(spoken)
+            if str(spoken).lower().replace(" ", "") == word.lower():
+                app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
+                task_state["started"] = False
+                __set_status(Status.IDLE)
                 return task.done
-    
-    except Exception as e:                            
-        # Speech is unintelligible
-        return task.again
+            else:
+                app.taskMgr.add(app.handle_mistake, extraArgs=[])
+                # Use condition lock to wait for main thread to increment mistake counter
+                app.mistakes_lock.wait()
+                if app.mistakes < 3:
+                    task_state["started"] = False
+                    __set_status(Status.IDLE)
+                    return task.again
+                else:
+                    task_state["started"] = False
+                    __set_status(Status.IDLE)
+                    return task.done
+        
+        except Exception as e:                            
+            # Speech is unintelligible
+            return task.again

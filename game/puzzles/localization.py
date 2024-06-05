@@ -14,13 +14,14 @@ MARGIN_H = 12
 MARGIN_S = 18
 MARGIN_V = 18
 
+MAX_FLASHES = 1
 STAGE_COUNT = 4
 COLORS = ['r','g','y','b']
 COLOR_REPEAT_CORNER_CONVERSION_TABLE = {
     'r': {1: 4, 2: 4, 3: 2},
     'g': {1: 2, 2: 4, 3: 2},
     'y': {1: 1, 2: 1, 3: 3},
-    'b': {1: 2, 2: 1, 3: 3}
+    'b': {1: 3, 2: 1, 3: 3}
 }
 
 stages = []
@@ -33,8 +34,9 @@ upper_limit = np.array([])
 def generate_stages():
     """Generate a sequence of colors (stages) for the game."""
     stages_local = []
-    for _ in range(STAGE_COUNT):
-        l_color = [COLORS[random.randint(0, 3)]] * random.randint(1, 3) # Random color, random repeats
+    order = random.sample([0, 1, 2, 3], 4)
+    for i in range(STAGE_COUNT):
+        l_color = [COLORS[order[i]]] * random.randint(1, MAX_FLASHES) # Random color, random repeats
         s_color = ''.join(l_color)
         stages_local.append(s_color)
     return stages_local
@@ -134,7 +136,7 @@ def focus(app):
     if not app.is_solved(Puzzle.LOCALIZATION):
         # Initialize game variables
         # Set up video capture
-        cap = cv2.VideoCapture(0)  # Start video capture
+        cap = cv2.VideoCapture(1)  # Start video capture
         while not cap.isOpened():
             pass
         BORDER_THICKNESS = 50

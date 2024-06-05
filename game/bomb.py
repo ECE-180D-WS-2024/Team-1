@@ -42,6 +42,8 @@ class BombApp(ShowBase):
         # Setup assets
         self.sound_beep = self.loader.loadSfx("assets/sound/beep.mp3")
         self.sound_explode = self.loader.loadSfx("assets/sound/explode.mp3")
+        self.sound_error = self.loader.loadSfx("assets/sound/error.mp3")
+        self.sound_success = self.loader.loadSfx("assets/sound/success.mp3")
 
         self.font_ssd = self.loader.loadFont("assets/font/dseg7.ttf")
         self.font_ssd.setPixelsPerUnit(60)
@@ -50,14 +52,22 @@ class BombApp(ShowBase):
         self.font_ftsg = self.loader.loadFont("assets/font/dseg14.ttf")
         self.font_ftsg.setPixelsPerUnit(60)
 
-        # Menu initialization
-        self.bomb = None
-        self.death_dialog = None
-        self.mistake_icons = None
-        self.win_dialog = None
+        self.mistake_icons = []
+        for i in range(self.max_mistakes):
+            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
+                                 pos = (-1.275 + i*0.11, 0, 0.95),
+                                 scale = 0.04)
+            icon.setTransparency(True)
+            self.mistake_icons.append(icon)
+
         self.__menu("Play")
 
-        # Tutorial Initialization
+    def finalizeExit(self):
+        self.running = False
+        sys.exit()
+
+    def __setup_tutorial(self):
+# Tutorial Initialization
         cm = CardMaker('popupBackground')
         cm.setFrame(-1, 1, -1, 1)
         self.popupBackground = aspect2d.attachNewNode(cm.generate())
@@ -131,10 +141,6 @@ class BombApp(ShowBase):
         self.popupVisible = False
         self.hidePopup()
 
-    def finalizeExit(self):
-        self.running = False
-        sys.exit()
-
     def __setup_game_over(self):
         self.death_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7),
                                          fadeScreen=1)
@@ -156,7 +162,7 @@ class BombApp(ShowBase):
     def __setup_timer(self):
         timer_node = self.bomb.find("**/timer")
         self.timer_text_node = TextNode(name="timer_text")
-        self.timer_text_node.setText("03:00")
+        self.timer_text_node.setText("07:00")
         self.timer_text_node.setFont(self.font_ssd)
         self.timer_text_node.setTextColor(255, 0, 0, 1)
         timer_text_bg_node = TextNode(name="timer_text_bg")
@@ -174,11 +180,14 @@ class BombApp(ShowBase):
         self.timer_text_np.setScale(0.125, 0.125, 0.2)
         self.timer_text_np.setHpr(0, 270, 90)
 
-        self.timer_sphere_np = self.bomb.find("**/timer.led")
-        timer_light_node = PointLight("timer_light")
-        timer_light_node.setColor((0, 255, 0, 0))
-        self.timer_light_np = self.timer_sphere_np.attachNewNode(timer_light_node)
-        self.timer_light_np.setPos(0, 0, 0.5)
+    def __setup_solved_indicator(self, puzzle):
+        sphere_np = self.bomb.find(f"**/{puzzle}.complete")
+        light_node = PointLight(f"{puzzle}.complete_light")
+        light_node.setColor((0, 255, 0, 0))
+        light_np = sphere_np.attachNewNode(light_node)
+        light_np.setPos(0, 0, 0.5)
+
+        return (sphere_np, light_np)
 
     def __setup_num_displays(self):
         def setup_num_display(disp_np: NodePath, puzzle_name: str, posX, posY, posZ, h, p ,r) -> NodePath:
@@ -211,10 +220,11 @@ class BombApp(ShowBase):
         ss_num_text = setup_num_display(ss_num_np, 'ss', 0.1, 0.1, -0.5, 0, 90, 270)
         hold_num_text = setup_num_display(hold_num_np, 'hold', -0.1, -0.1, 0.5, 90, 270, 90)
 
-        self.num_texts = [seq_num_text, wire_num_text, ss_num_text, hold_num_text]
+        self.num_texts = [seq_num_text, ss_num_text, hold_num_text, wire_num_text]
 
     def handle_mistake(self):
         if self.mistakes < 3:
+            self.sound_error.play()
             self.mistake_icons[self.mistakes].show()
             self.mistakes += 1
             self.mistakes_lock.notify_all()
@@ -222,9 +232,11 @@ class BombApp(ShowBase):
             self.explode_bomb()
 
     def solve_puzzle(self, puzzle: Puzzle):
-        if puzzle != Puzzle.SPEECH:
-            speech.display_puzzle_hex(self, puzzle)
+        self.sound_success.play()
         self.solved_puzzles.add(puzzle)
+
+        sphere_np, light_np = self.solved_light_nps[puzzle]
+        sphere_np.setLight(light_np)
 
         if len(self.solved_puzzles) == 5:
             self.task_blink_colon.remove()
@@ -244,10 +256,10 @@ class BombApp(ShowBase):
         self.accept(event.encode('orientation', Orientation.SEQUENCING), sequence.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.CLOCK), hold.focus, extraArgs=[self])
 
-        self.accept(event.encode('sequence', Sequence.TOP_LEFT), sequence.press_btn, extraArgs=[self, (0, 0), (0.200018, 1.04975, 0.193841)])
-        self.accept(event.encode('sequence', Sequence.TOP_RIGHT), sequence.press_btn, extraArgs=[self, (0, 1), (-0.199982, 1.04975, 0.193841)])
-        self.accept(event.encode('sequence', Sequence.BOTTOM_LEFT), sequence.press_btn, extraArgs=[self, (1, 0), (0.200018, 1.04975, -0.206159)])
-        self.accept(event.encode('sequence', Sequence.BOTTOM_RIGHT), sequence.press_btn, extraArgs=[self, (1, 1), (-0.199982, 1.04975, -0.206159)])
+        self.accept(event.encode('sequence', Sequence.TOP_LEFT), sequence.press_btn, extraArgs=[self, (0, 0)])
+        self.accept(event.encode('sequence', Sequence.TOP_RIGHT), sequence.press_btn, extraArgs=[self, (0, 1)])
+        self.accept(event.encode('sequence', Sequence.BOTTOM_LEFT), sequence.press_btn, extraArgs=[self, (1, 0)])
+        self.accept(event.encode('sequence', Sequence.BOTTOM_RIGHT), sequence.press_btn, extraArgs=[self, (1, 1)])
 
         self.accept(event.encode('rgb', RGB.PRESSED), hold.push_button, extraArgs=[self])
         self.accept(event.encode('rgb', RGB.NOT_PRESSED), hold.release_button, extraArgs=[self])
@@ -275,7 +287,7 @@ class BombApp(ShowBase):
             self.accept('l', sequence.press_btn, extraArgs=[self, (1, 1)])
 
             self.accept('space', hold.push_button, extraArgs=[self])
-            self.accept('space_up', hold.release_button, extraArgs=[self])
+            self.accept('space-up', hold.release_button, extraArgs=[self])
 
     def rotate_bomb_feet(self):
         self.bomb.hprInterval(0.25, (0, -90, 0)).start()
@@ -298,27 +310,32 @@ class BombApp(ShowBase):
         secs_str = str(secs).zfill(2)
         self.timer_text_node.setText(f'{mins_str}:{secs_str}')
     
-    def blink_timer_light(self, task: Task):
-        if not self.timer_light_on:
+    def task_beep(self, task: Task):
+        self.sound_beep.play()
+        task.delayTime = 1 
+        """ if not self.timer_light_on:
             self.timer_sphere_np.setLight(self.timer_light_np)
             self.timer_light_on = True
-            self.sound_beep.play()
             task.delayTime = 0.5
         else:
             self.timer_sphere_np.setLightOff(self.timer_light_np)
             self.timer_light_on = False
-            task.delayTime = 0.5
+            task.delayTime = 0.5 """
         return task.again
     
     def start_game(self):
         self.death_dialog.hide()
         self.running = True
         self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
-        self.taskMgr.add(self.blink_timer_light, "blink_light", delay=1)
+        self.taskMgr.add(self.task_beep, "blink_light", delay=1)
         self.mistakes = 0
         self.solved_puzzles = set()
+
         for icon in self.mistake_icons:
             icon.hide()
+
+        for sphere_np, light_np in self.solved_light_nps.values():
+            sphere_np.setLightOff(light_np)
 
         wires.generate_puzzle(self)
         sequence.generate_puzzle(self)
@@ -489,14 +506,6 @@ class BombApp(ShowBase):
     
     # Initializes bomb on click
     def __play_handler(self):
-        self.mistake_icons = []
-        for i in range(self.max_mistakes):
-            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
-                                 pos = (-1.275 + i*0.11, 0, 0.95),
-                                 scale = 0.04)
-            icon.setTransparency(True)
-            self.mistake_icons.append(icon)
-
         # Setup scene
         self.bomb = self.loader.loadModel("assets/model/bomb.bam")
         self.bomb.reparentTo(self.render)
@@ -510,7 +519,16 @@ class BombApp(ShowBase):
         self.render.setLight(self.spotlight_np)
         self.render.setShaderAuto()
 
+        self.solved_light_nps = {
+            Puzzle.HOLD: self.__setup_solved_indicator('hold'),
+            Puzzle.WIRES: self.__setup_solved_indicator('wire'),
+            Puzzle.LOCALIZATION: self.__setup_solved_indicator('ss'),
+            Puzzle.SPEECH: self.__setup_solved_indicator('speech'),
+            Puzzle.SEQUENCE: self.__setup_solved_indicator('seq')
+        }
+
         self.__setup_game_over()
+        self.__setup_tutorial()
 
         # Setup post-processed components
         self.__setup_timer()
@@ -531,7 +549,7 @@ class BombApp(ShowBase):
         #   other thread is used to pass messages to the message bus
         ble.spawn(self, rgb_encoding)
 
-        self.__setup_controls() 
+        self.__setup_controls()
         self.start_game()
 
         self.playButton.hide()
@@ -540,7 +558,7 @@ class BombApp(ShowBase):
     def __menu(self, buttonText):
         # Play button initialization
         print('&&')
-        self.playButton = DirectButton(text=buttonText, scale=0.2, pos=(0, 1, 0), command=self.__play_handler)
+        self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, 1, 0), command=self.__play_handler)
     
     def __reset_game(self):
         # Clear previous game content if it existed

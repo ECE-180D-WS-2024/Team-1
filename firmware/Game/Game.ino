@@ -31,7 +31,7 @@ int digitmappings[10][7] = { // Starts at 9!
 };
 int pinArr[7] = {PIN_A, PIN_B, PIN_C, PIN_D, PIN_E, PIN_F, PIN_G};
 int digArr[4] = {DIG_0, DIG_1, DIG_2};
-int idxArr[3] = {9, 9, 6};
+int idxArr[3] = {9, 9, 2};
 int FlashInterval[3] = {0, 150, 1000};
 
 int activeDigit = 0;
@@ -245,7 +245,7 @@ void ImuSetup() {
 void ResetClock() {
   idxArr[0] = 9;
   idxArr[1] = 9;
-  idxArr[2] = 6;
+  idxArr[2] = 2;
   //digitalWrite(RED_LED, 0);
   time_expired = false;
 }
