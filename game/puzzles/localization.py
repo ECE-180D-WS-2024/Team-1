@@ -132,9 +132,8 @@ def __end_of_stage(user_answers):
 def focus(app):
     app.bomb.hprInterval(0.25, (180, 0, 0)).start()
     app.focused = Puzzle.LOCALIZATION
-    print(answer_key)
 
-    if not app.is_solved(Puzzle.LOCALIZATION):
+    if not app.is_solved(Puzzle.LOCALIZATION) and not app.taskMgr.hasTaskNamed("process_cv_frame"):
         # Initialize game variables
         # Set up video capture
         cap = cv2.VideoCapture(0)  # Start video capture
@@ -167,10 +166,11 @@ def focus(app):
             "dimens": dimens,
             "user_answers": [],
             "new_added": False,
-            "centered": False
+            "centered": 0
         }
 
         # Game loop for each stage
+    
         app.taskMgr.add(task_process_cv_frame, "process_cv_frame", extraArgs=[task_state], appendTask=True)
 
 def task_process_cv_frame(task_state, task: Task):
@@ -224,26 +224,27 @@ def task_process_cv_frame(task_state, task: Task):
         # Check if the object is centered within the designated area
         if color_middle_x <= bounds["rx"] - margin_x and color_middle_x >= bounds["ly"] + margin_x and \
             color_middle_y >= bounds["ty"] and color_middle_y <= bounds["by"]:
-            task_state["centered"] = True
+            task_state["centered"] += 1
         
         # Check the corner based on object position and add user's answer
-        if task_state["centered"]:
+        print(f'state: {task_state["centered"]}')
+        if task_state["centered"] > 10:
             if color_middle_x < bounds["ly"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(1)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             elif color_middle_x > bounds["rx"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(2)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             elif color_middle_x < bounds["ly"] and color_middle_y > bounds["by"]:
                 task_state["user_answers"].append(3)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             elif color_middle_x > bounds["rx"] and color_middle_y > bounds["by"]:
                 task_state["user_answers"].append(4)
                 task_state["new_added"] = True
-                task_state["centered"] = False
+                task_state["centered"] = 0
             
         # Validate user's answer with the answer key
         if task_state["new_added"]:
