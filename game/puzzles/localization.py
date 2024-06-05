@@ -132,9 +132,8 @@ def __end_of_stage(user_answers):
 def focus(app):
     app.bomb.hprInterval(0.25, (180, 0, 0)).start()
     app.focused = Puzzle.LOCALIZATION
-    print(answer_key)
 
-    if not app.is_solved(Puzzle.LOCALIZATION):
+    if not app.is_solved(Puzzle.LOCALIZATION) and not app.taskMgr.hasTaskNamed("process_cv_frame"):
         # Initialize game variables
         # Set up video capture
         cap = cv2.VideoCapture(0)  # Start video capture
@@ -167,10 +166,11 @@ def focus(app):
             "dimens": dimens,
             "user_answers": [],
             "new_added": False,
-            "centered": False
+            "centered": 0
         }
 
         # Game loop for each stage
+    
         app.taskMgr.add(task_process_cv_frame, "process_cv_frame", extraArgs=[task_state], appendTask=True)
 
 def task_process_cv_frame(task_state, task: Task):
@@ -227,8 +227,8 @@ def task_process_cv_frame(task_state, task: Task):
             task_state["centered"] += 1
         
         # Check the corner based on object position and add user's answer
-        if task_state["centered"] > 3:
-            print("recentred")
+        print(f'state: {task_state["centered"]}')
+        if task_state["centered"] > 10:
             if color_middle_x < bounds["ly"] and color_middle_y < bounds["ty"]:
                 task_state["user_answers"].append(1)
                 task_state["new_added"] = True
