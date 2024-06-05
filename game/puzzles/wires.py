@@ -38,7 +38,6 @@ def init(app):
         'k': materials.findMaterial('wire.black')
     }
 
-    generate_puzzle(app)
 
 def generate_puzzle(app):
     global wire_cut
@@ -46,7 +45,8 @@ def generate_puzzle(app):
     wires = random.choices(COLORS, k=6)
     rand_num = random.randint(1, 9)
     correct_wire = __get_correct_wire(wires, rand_num)
-    
+    print(correct_wire)
+
     app.num_texts[int(Puzzle.WIRES)].setText(str(rand_num).zfill(2))
 
     for i in range(6):
