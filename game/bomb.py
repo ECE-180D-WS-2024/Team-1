@@ -44,6 +44,7 @@ class BombApp(ShowBase):
         self.sound_explode = self.loader.loadSfx("assets/sound/explode.mp3")
         self.sound_error = self.loader.loadSfx("assets/sound/error.mp3")
         self.sound_success = self.loader.loadSfx("assets/sound/success.mp3")
+        self.sound_win = self.loader.loadSfx("assets/sound/win.mp3")
 
         self.font_ssd = self.loader.loadFont("assets/font/dseg7.ttf")
         self.font_ssd.setPixelsPerUnit(60)
@@ -53,11 +54,30 @@ class BombApp(ShowBase):
         self.font_ftsg.setPixelsPerUnit(60)
 
         self.__setup_tutorial()
+        self.__setup_win_dialog()
         self.__menu("Play")
 
     def finalizeExit(self):
         self.running = False
         sys.exit()
+
+    def __setup_win_dialog(self):
+        self.win_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7), fadeScreen=1)
+        self.win_dialog_title = DirectLabel(text="WOOHOO!",
+                                              scale=0.15,
+                                              pos = (0, 0, 0.4),
+                                              parent=self.win_dialog)
+        self.win_dialog_subtitle = DirectLabel(text="You Win!",
+                                              scale=0.1,
+                                              pos = (0, 0, 0),
+                                              parent=self.win_dialog)
+        self.win_dialog_reset_btn = DirectButton(text="Play again",
+                                                   scale=0.05,
+                                                   pos = (0, 0, -0.4),
+                                                   parent=self.win_dialog,
+                                                   command=self.start_game,
+                                                   frameSize=(-4, 4, -1, 1))
+        self.win_dialog.hide()
 
     def __setup_tutorial(self):
 # Tutorial Initialization
@@ -232,9 +252,6 @@ class BombApp(ShowBase):
         sphere_np.setLight(light_np)
 
         if len(self.solved_puzzles) == 5:
-            self.task_blink_colon.remove()
-            self.task_decr_time.remove()
-            self.task_blink_timer_light.remove()
             self.__display_win()
     
     def is_solved(self, puzzle: Puzzle):
@@ -242,6 +259,8 @@ class BombApp(ShowBase):
 
     def __setup_controls(self):
         self.accept('heartbeat', self.set_time)
+
+        self.accept('g', self.__display_win)
 
         self.accept(event.encode('orientation', Orientation.LOCALIZATION), localization.focus, extraArgs=[self])
         self.accept(event.encode('orientation', Orientation.SPEECH), speech.focus, extraArgs=[self])
@@ -317,6 +336,7 @@ class BombApp(ShowBase):
         return task.again
     
     def start_game(self):
+        self.win_dialog.hide()
         self.death_dialog.hide()
         self.running = True
         self.taskMgr.add(self.blink_colon, "blink_colon", delay=0.5)
@@ -560,21 +580,10 @@ class BombApp(ShowBase):
         self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, 0, 0), command=self.__play_handler)
     
     def __display_win(self):
-        self.win_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7), fadeScreen=1)
-        self.win_dialog_title = DirectLabel(text="WOOHOO!",
-                                              scale=0.15,
-                                              pos = (0, 0, 0.4),
-                                              parent=self.win_dialog)
-        self.win_dialog_subtitle = DirectLabel(text="You Win!",
-                                              scale=0.1,
-                                              pos = (0, 0, 0),
-                                              parent=self.win_dialog)
-        self.win_dialog_reset_btn = DirectButton(text="Play again",
-                                                   scale=0.05,
-                                                   pos = (0, 0, -0.4),
-                                                   parent=self.win_dialog,
-                                                   command=self.start_game,
-                                                   frameSize=(-4, 4, -1, 1))
+        self.sound_win.play()
+        self.taskMgr.remove("blink_colon")
+        self.taskMgr.remove("blink_light")
+        self.win_dialog.show()
 
 
 def main():
