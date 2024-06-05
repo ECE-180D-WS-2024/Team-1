@@ -120,7 +120,7 @@ def __task_process_speech(app, task):
     with sr.Microphone() as source:
         try:
             print("waiting on start")
-            audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=1)
+            audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=2)
         except Exception as e:
             return task.again
     try:
@@ -136,7 +136,7 @@ def __task_process_speech(app, task):
     
     with sr.Microphone() as source:
         try:
-            audio = recognizer.listen(source, timeout=2, phrase_time_limit=1)             
+            audio = recognizer.listen(source, timeout=3, phrase_time_limit=2)             
             __set_status(Status.IDLE)      
         except Exception as e:
             return task.again

@@ -134,7 +134,7 @@ def focus(app):
     if not app.is_solved(Puzzle.LOCALIZATION):
         # Initialize game variables
         # Set up video capture
-        cap = cv2.VideoCapture(0)  # Start video capture
+        cap = cv2.VideoCapture(1)  # Start video capture
         while not cap.isOpened():
             pass
         BORDER_THICKNESS = 50
