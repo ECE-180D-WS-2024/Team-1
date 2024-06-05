@@ -52,14 +52,7 @@ class BombApp(ShowBase):
         self.font_ftsg = self.loader.loadFont("assets/font/dseg14.ttf")
         self.font_ftsg.setPixelsPerUnit(60)
 
-        self.mistake_icons = []
-        for i in range(self.max_mistakes):
-            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
-                                 pos = (-1.275 + i*0.11, 0, 0.95),
-                                 scale = 0.04)
-            icon.setTransparency(True)
-            self.mistake_icons.append(icon)
-
+        self.__setup_tutorial()
         self.__menu("Play")
 
     def finalizeExit(self):
@@ -73,7 +66,7 @@ class BombApp(ShowBase):
         self.popupBackground = aspect2d.attachNewNode(cm.generate())
         self.popupBackground.setColor(0, 0, 0, 1)
         self.popupBackground.setScale(1.25, 1.25, 0.75)
-        self.popupBackground.setPos(0, 0, 0)
+        self.popupBackground.setPos(0, 1, 0)
         self.popupBackground.setTransparency(TransparencyAttrib.MAlpha)
 
         # Tutorial toggle button
@@ -156,7 +149,7 @@ class BombApp(ShowBase):
                                                    scale=0.05,
                                                    pos = (0, 0, -0.4),
                                                    parent=self.death_dialog,
-                                                   command=self.__reset_game,
+                                                   command=self.start_game,
                                                    frameSize=(-4, 4, -1, 1))
         
     def __setup_timer(self):
@@ -506,6 +499,14 @@ class BombApp(ShowBase):
     
     # Initializes bomb on click
     def __play_handler(self):
+        self.mistake_icons = []
+        for i in range(self.max_mistakes):
+            icon = OnscreenImage(image='assets/texture/ui/mistake.png', 
+                                 pos = (-1.275 + i*0.11, 0, 0.95),
+                                 scale = 0.04)
+            icon.setTransparency(True)
+            self.mistake_icons.append(icon)
+
         # Setup scene
         self.bomb = self.loader.loadModel("assets/model/bomb.bam")
         self.bomb.reparentTo(self.render)
@@ -528,7 +529,6 @@ class BombApp(ShowBase):
         }
 
         self.__setup_game_over()
-        self.__setup_tutorial()
 
         # Setup post-processed components
         self.__setup_timer()
@@ -558,7 +558,7 @@ class BombApp(ShowBase):
     def __menu(self, buttonText):
         # Play button initialization
         print('&&')
-        self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, 1, 0), command=self.__play_handler)
+        self.playButton = DirectButton(text=buttonText, scale=0.1, pos=(0, -1, 0), command=self.__play_handler)
     
     def __reset_game(self):
         # Clear previous game content if it existed
@@ -579,7 +579,6 @@ class BombApp(ShowBase):
     
     def __display_win(self):
         # self.__menu("Play Again?")
-        self.__reset_game()
         self.win_dialog = DirectDialog(frameSize=(-0.7, 0.7, -0.7, 0.7), fadeScreen=1)
         self.win_dialog_title = DirectLabel(text="WOOHOO!",
                                               scale=0.15,
@@ -593,7 +592,7 @@ class BombApp(ShowBase):
                                                    scale=0.05,
                                                    pos = (0, 0, -0.4),
                                                    parent=self.win_dialog,
-                                                   command=self.__reset_game,
+                                                   command=self.start_game,
                                                    frameSize=(-4, 4, -1, 1))
 
 
