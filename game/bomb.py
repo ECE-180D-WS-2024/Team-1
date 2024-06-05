@@ -19,8 +19,6 @@ from direct.gui.DirectDialog import DirectDialog
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectButton import DirectButton
 from direct.stdpy.threading import Condition
-from direct.gui.DirectButton import DirectButton
-from direct.gui.OnscreenImage import OnscreenImage
 
 from panda3d.core import TextNode, PointLight, Spotlight, NodePath, TransparencyAttrib, CardMaker, MovieTexture
 from PIL import Image
@@ -114,19 +112,18 @@ class BombApp(ShowBase):
         self.pages = [
             "Welcome to Bomb Goes Boom! This is a cooperative, 2-player game designed to foster teamwork!",
             "Before continuing, make sure that the manual player has the bomb defusal manual open.",
-            "Now, we'll go through examples so that you, the defusal player, know how all the controls for our game.",
-            "Before starting the game, place the bomb upright so the side with the timer is facing up. The GUI should show the corresponding page.",
-            "To start the game, press the button that is underneath the timer. This should start the timer both on the bomb and on the GUI.",
-            "Now that the timer has started, your are ready to play some games!",
-            "In the WIRE CUTTING GAME, your goal is to cut the correct wire. Carefully observe the wires displayed on the GUI, then relay that information to your teammate. They will then give you instructions on the correct button to press.",
-            "In the SEQUENCING GAME, your goal is enter four symbols in the correct order. Carefully observe what symbols appear on the GUI, and relay that information to your teammate. They will give you instructions on what order to press the buttons in.",
-            "In the SIMON SAYS GAME, your goal is to move the bomb around the screen in a correct sequence. Observe what colors appear on the GUI, and relay that information to the manual player. They will give instructions on how to move the bomb.",
-            "In the BINARY SPEECH GAME, your goal is speak a correct code word into the microphone. Relay the big-endian number, to the manual player, and they will give instructions on what to say in the microphone.",
-            "After the main four games are completed, you can move on to the final game, the DEFUSAL GAME.",
-            "In the DEFUSAL GAME, your goal is to defuse the bomb at the correct time. Get instructions from the manual player on when you are allowed to defuse the bomb.",
-            "To SWITCH BETWEEN GAMES, rotate the bomb to a different side. Doing this will also rotate the GUI to the corresponding side.",
+            "Also, note that the defusal player is not allowed to see the bomb manual, and the manual player is not allowed to see the bomb.",
+            "Now, we'll go through examples so that you, the defusal player, know all the controls for our game.",
+            "Firstly, to SWITCH BETWEEN GAMES, rotate the bomb to a different side. Doing this will also rotate the GUI to the corresponding side.",
+            "Rotate this side up to activate the WIRE CUTTING GAME. In the WIRE CUTTING GAME, there are 6 buttons that correspond to the wires on the GUI. After working with your partner, push a button to cut a wire you think is correct.",
+            "Rotate this side up to activate the SEQUENCING GAME. In the SEQUENCING GAME, there are 4 symbols displayed. After working with your partner, press the 4 buttons in the order you think is correct.",
+            "Rotate this side up to activate the SIMON SAYS GAME. Also, make sure that the green side of the bomb is facing the defusing player's computer camera. ==>",
+            "In the SIMON SAYS GAME, your goal is to move the green side of the bomb around the edges of the screen in a correct sequence. After working with your partner, slide the bomb in the order you think is correct.",
+            "Rotate this side up to activate the LED TIMER GAME. In the LED TIMER GAME, your goal is to press the button at the right time. After working with your partner, press and release the button at times you think are correct.",
+            "Rotate this side up to activate the BINARY SPEECH GAME. In the BINARY SPEECH GAME, a big-endian number is displayed on the GUI. After working with your partner, speak a code word into the mic that you think is correct.",
+            "Once all 5 games are completed, the bomb will defuse automatically. If the bomb defuses before the timer ends, you win!"
         ]
-        
+
         # Main tutorial text node
         self.popupTextNode = TextNode('popupTextNode')
         self.popupTextNode.setWordwrap(35)
@@ -377,14 +374,22 @@ class BombApp(ShowBase):
         self.prevButton.show() if self.currentPage > 0 else self.prevButton.hide()
         self.nextButton.show() if self.currentPage < len(self.pages) - 1 else self.nextButton.hide()
 
-        if self.currentPage < 3:
-            image_path1 = 'assets/images/bomb.png'
+        if self.currentPage < 4 or self.currentPage == 11:
+            self.stopTutorialVideo()
+            if self.currentPage == 0 or self.currentPage == 3:
+                image_path1 = 'assets/images/bomb.png'
+            elif self.currentPage == 1:
+                image_path1 = 'assets/images/bomb_manual.png'
+            elif self.currentPage == 2:
+                image_path1 = 'assets/images/concept_refresher.png'
+            elif self.currentPage == 11:
+                image_path1 = 'assets/images/checkboxes.png'
             self.tutorialImage1.setImage(image_path1)
             self.tutorialImage1.setPos(0, 0, 0.2)
             self.adjust_image_aspect(self.tutorialImage1, image_path1, self.max_image_width, self.max_image_height)
             self.tutorialImage1.show()
             self.tutorialImage2.hide()
-        elif self.currentPage == 12:
+        elif self.currentPage == 4:
             self.tutorialImage1.hide()
             self.tutorialImage2.hide()
             self.playTutorialVideo('assets/videos/bomb_rotation.mp4')
@@ -393,24 +398,28 @@ class BombApp(ShowBase):
             image_path1 = ""
             image_path2 = ""
 
-            if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
-                image_path1 = 'assets/images/bomb_arduino1.png'
-                image_path2 = 'assets/images/gui_timer.png'
-            elif self.currentPage == 4:
-                image_path1 = 'assets/images/bomb_start_button.png'
-                image_path2 = 'assets/images/gui_timer.png'
-            elif self.currentPage == 6:
+            #if self.currentPage == 3 or self.currentPage == 10 or self.currentPage == 11:
+            #    image_path1 = 'assets/images/bomb_arduino1.png'
+            #    image_path2 = 'assets/images/gui_timer.png'
+
+            if self.currentPage == 5:
                 image_path1 = 'assets/images/bomb_wires.png'
                 image_path2 = 'assets/images/gui_wires.png'
-            elif self.currentPage == 7:
+            elif self.currentPage == 6:
                 image_path1 = 'assets/images/bomb_sequence.png'
                 image_path2 = 'assets/images/gui_sequence.png'
+            elif self.currentPage == 7:
+                image_path1 = 'assets/images/bomb_localization1.png'
+                image_path2 = 'assets/images/gui_localization.png'
             elif self.currentPage == 8:
-                image_path1 = 'assets/images/bomb_localization.png'
+                image_path1 = 'assets/images/bomb_localization2.png'
                 image_path2 = 'assets/images/gui_localization.png'
             elif self.currentPage == 9:
+                image_path1 = 'assets/images/bomb_arduino1.png'
+                image_path2 = 'assets/images/gui_timer.png'
+            elif self.currentPage == 10:
                 image_path1 = 'assets/images/bomb_speech.png'
-                image_path2 = 'assets/images/gui_speech.png'
+                image_path2 = 'assets/images/gui_speech.png'            
 
             if image_path1:
                 self.tutorialImage1.setImage(image_path1)
