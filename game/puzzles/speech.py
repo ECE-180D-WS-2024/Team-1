@@ -28,13 +28,14 @@ def generate_code():
 
 def analyze_code(bytes):
     """Analyze the code and determine the output based on the given rules."""
-    binary_bytes = [format(b, '08b') for b in bytes]
+    binary_bytes = [format(b, '02b') for b in bytes]
 
     # Split the code into individual bytes
     # Check the conditions and determine the output
+    print(binary_bytes)
     if binary_bytes[0][0] == '1':
         return "Orange"
-    elif int(binary_bytes[1], 2) % 8 == 0:
+    elif int(binary_bytes[1], 2) == 3:
         return "Banana"
     elif binary_bytes[2][-1] == '0':
         return "Apple"
@@ -96,7 +97,11 @@ def focus(app):
     app.bomb.hprInterval(0.25, (0, 0, 0)).start()
     app.focused = Puzzle.SPEECH
     
-    app.taskMgr.add(__task_process_speech, extraArgs=[app], appendTask=True, taskChain="speech_chain")
+    task_state = {
+        "app": app,
+        "started": False,
+    }
+    app.taskMgr.add(__task_process_speech, extraArgs=[task_state], appendTask=True, taskChain="speech_chain")
 
 def __set_status(status: Status):
     def handle_lights(on_nps, off_nps):
@@ -112,53 +117,66 @@ def __set_status(status: Status):
         case Status.IDLE:
             handle_lights(status_nps['red'], status_nps['blue'])
     
-def __task_process_speech(app, task):
+def __task_process_speech(task_state, task):
+    app = task_state["app"]
+    print(task_state['started'])
     if app.focused != Puzzle.SPEECH or not app.running:
         return task.done
     # Initialize the recognizer
     # Use the default microphone as the audio source
-    with sr.Microphone() as source:
+    if not task_state['started']:
+        with sr.Microphone() as source:
+            try:
+                print("waiting on start")
+                audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=3)
+            except Exception as e:
+                print(e)
+                return task.again
         try:
-            print("waiting on start")
-            audio_start = recognizer.listen(source, timeout=1, phrase_time_limit=2)
-        except Exception as e:
-            return task.again
-    try:
-        spoken_start = recognizer.recognize_google(audio_start)
-        print(spoken_start)
-        if str(spoken_start).lower().replace(" ", "") != "start":
-            return task.again
-        else:
-            __set_status(Status.LISTENING)
-    except Exception as e:
-        # Speech is unintelligible
-        return task.again
-    
-    with sr.Microphone() as source:
-        try:
-            audio = recognizer.listen(source, timeout=3, phrase_time_limit=2)             
-            __set_status(Status.IDLE)      
-        except Exception as e:
-            return task.again
-    try:
-        # Recognize speech using Google Speech Recognition
-        # print("You said " + r.recognize_google(audio))    
-        
-        # Check if the recognized speech matches the key
-        print(spoken)
-        spoken = recognizer.recognize_google(audio)
-        if str(spoken).lower().replace(" ", "") == word.lower():
-            app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
-            return task.done
-        else:
-            app.taskMgr.add(app.handle_mistake, extraArgs=[])
-            # Use condition lock to wait for main thread to increment mistake counter
-            app.mistakes_lock.wait()
-            if app.mistakes < 3:
+            spoken_start = recognizer.recognize_google(audio_start)
+            print(spoken_start)
+            if str(spoken_start).lower().replace(" ", "") != "start":
                 return task.again
             else:
+                task_state['started'] = True
+                return task.again
+        except Exception as e:
+            # Speech is unintelligible
+            print(e)
+            return task.again
+    else:
+        print("enter phrase")
+        with sr.Microphone() as source:
+            try:
+                __set_status(Status.LISTENING)
+                audio = recognizer.listen(source, timeout=3, phrase_time_limit=3)             
+            except Exception as e:
+                return task.again
+        try:
+            # Recognize speech using Google Speech Recognition
+            # print("You said " + r.recognize_google(audio))    
+            
+            # Check if the recognized speech matches the key
+            spoken = recognizer.recognize_google(audio)
+            print(spoken)
+            if str(spoken).lower().replace(" ", "") == word.lower():
+                app.taskMgr.add(app.solve_puzzle, extraArgs=[Puzzle.SPEECH])
+                task_state["started"] = False
+                __set_status(Status.IDLE)
                 return task.done
-    
-    except Exception as e:                            
-        # Speech is unintelligible
-        return task.again
+            else:
+                app.taskMgr.add(app.handle_mistake, extraArgs=[])
+                # Use condition lock to wait for main thread to increment mistake counter
+                app.mistakes_lock.wait()
+                if app.mistakes < 3:
+                    task_state["started"] = False
+                    __set_status(Status.IDLE)
+                    return task.again
+                else:
+                    task_state["started"] = False
+                    __set_status(Status.IDLE)
+                    return task.done
+        
+        except Exception as e:                            
+            # Speech is unintelligible
+            return task.again

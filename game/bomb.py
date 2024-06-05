@@ -207,7 +207,7 @@ class BombApp(ShowBase):
     def __setup_timer(self):
         timer_node = self.bomb.find("**/timer")
         self.timer_text_node = TextNode(name="timer_text")
-        self.timer_text_node.setText("03:00")
+        self.timer_text_node.setText("07:00")
         self.timer_text_node.setFont(self.font_ssd)
         self.timer_text_node.setTextColor(255, 0, 0, 1)
         timer_text_bg_node = TextNode(name="timer_text_bg")
