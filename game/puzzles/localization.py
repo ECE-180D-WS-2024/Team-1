@@ -169,8 +169,7 @@ def focus(app):
             "centered": 0
         }
 
-        # Game loop for each stage
-    
+        # Game loop for each stage 
         app.taskMgr.add(task_process_cv_frame, "process_cv_frame", extraArgs=[task_state], appendTask=True)
 
 def task_process_cv_frame(task_state, task: Task):
