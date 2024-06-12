@@ -97,13 +97,13 @@ def focus(app):
     app.bomb.hprInterval(0.25, (0, 0, 0)).start()
     app.focused = Puzzle.SPEECH
     
-    if not app.is_solved(Puzzle.SPEECH) and not app.taskMgr.hasTaskNamed("speech_chain"):
+    if not app.is_solved(Puzzle.SPEECH) and not app.taskMgr.hasTaskNamed("process_speech"):
         task_state = {
             "app": app,
             "started": False,
         }
 
-        app.taskMgr.add(__task_process_speech, extraArgs=[task_state], appendTask=True, taskChain="speech_chain")
+        app.taskMgr.add(__task_process_speech, name="process_speech", extraArgs=[task_state], appendTask=True, taskChain="speech_chain")
 
 def __set_status(status: Status):
     def handle_lights(on_nps, off_nps):
@@ -138,7 +138,9 @@ def __task_process_speech(task_state, task):
             print("tried")
             spoken_start = recognizer.recognize_google(audio_start)
             print(f'word: {spoken_start}')
-            if "begin" not in spoken_start.lower().replace(" ", ""):
+            keywords = ['begin', 'again', 'vegan', 'began', 'bien']
+            formatted_word = spoken_start.lower().replace(" ", "")
+            if all([keyword not in formatted_word for keyword in keywords]):
                 print("not equal")
                 return task.again
             else:
